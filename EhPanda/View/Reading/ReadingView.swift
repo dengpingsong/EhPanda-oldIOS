@@ -19,8 +19,12 @@ struct ReadingView: View {
     @StateObject private var liveTextHandler = LiveTextHandler()
     @StateObject private var autoPlayHandler = AutoPlayHandler()
     @StateObject private var gestureHandler = GestureHandler()
-    @StateObject private var pageHandler = PageHandler()
     @StateObject private var page: Page = .first()
+    @State private var showsSliderPreview = false
+    @State private var sliderValue: Float = 1
+    @State private var pagerIndex = 0
+
+    private let pageHandler = PageHandler()
 
     init(
         store: StoreOf<ReadingReducer>,
@@ -38,6 +42,7 @@ struct ReadingView: View {
 
     var body: some View {
         WithPerceptionTracking {
+            let initialReadingProgress = store.readingProgress
             changeTriggers(content: { content })
                 .sheet(item: $store.route.sending(\.setNavigation).readingSetting) { _ in
                     WithPerceptionTracking {
@@ -89,7 +94,14 @@ struct ReadingView: View {
                     liveTextHandler.cancelRequests()
                     setAutoPlayPolocy(.off)
                 }
-                .onAppear { store.send(.onAppear(gid, setting.enablesLandscape)) }
+                .onAppear {
+                    if initialReadingProgress > 0 {
+                        sliderValue = .init(initialReadingProgress)
+                        Logger.info("sliderValue.didSet", context: ["sliderValue": sliderValue])
+                        setPageIndex(sliderValue: sliderValue)
+                    }
+                    store.send(.onAppear(gid, setting.enablesLandscape))
+                }
         }
     }
 
@@ -108,6 +120,7 @@ struct ReadingView: View {
                         content: imageStack
                     )
                     .scrollDisabled(gestureHandler.scale != 1)
+                    .synchronize($pagerIndex, $page.index)
                 } else {
                     Pager(
                         page: page,
@@ -118,6 +131,7 @@ struct ReadingView: View {
                     .horizontal(setting.readingDirection == .rightToLeft ? .endToStart : .startToEnd)
                     .swipeInteractionArea(.allAvailable)
                     .allowsDragging(gestureHandler.scale == 1)
+                    .synchronize($pagerIndex, $page.index)
                 }
             }
             .scaleEffect(gestureHandler.scale, anchor: gestureHandler.scaleAnchor)
@@ -134,8 +148,8 @@ struct ReadingView: View {
 
             ControlPanel(
                 showsPanel: $store.showsPanel,
-                showsSliderPreview: $store.showsSliderPreview,
-                sliderValue: $pageHandler.sliderValue, setting: $setting,
+                showsSliderPreview: $showsSliderPreview,
+                sliderValue: $sliderValue, setting: $setting,
                 enablesLiveText: $liveTextHandler.enablesLiveText,
                 autoPlayPolicy: .init(get: { autoPlayHandler.policy }, set: { setAutoPlayPolocy($0) }),
                 range: 1...Float(store.gallery.pageCount),
@@ -162,31 +176,48 @@ struct ReadingView: View {
     }
 
     private func pageTriggers<C: View>(_ content: C) -> some View {
-        content
-            .onChange(of: page.index, perform: { newValue in
-                Logger.info("page.index changed", context: ["pageIndex": newValue])
+        let pageCount = store.gallery.pageCount
+        let isDatabaseIdle = store.databaseLoadingState == .idle
+        return content
+            .onChange(of: pagerIndex, perform: { newValue in
+                Logger.info("pagerIndex changed", context: ["pageIndex": newValue])
                 let newValue = pageHandler.mapFromPager(
-                    index: newValue, pageCount: store.gallery.pageCount, setting: setting
+                    index: newValue, pageCount: pageCount, setting: setting
                 )
-                pageHandler.sliderValue = .init(newValue)
-                if store.databaseLoadingState == .idle {
+                sliderValue = .init(newValue)
+                Logger.info("sliderValue.didSet", context: ["sliderValue": sliderValue])
+                if isDatabaseIdle {
                     store.send(.syncReadingProgress(.init(newValue)))
                 }
             })
-            .onChange(of: pageHandler.sliderValue, perform: { newValue in
-                Logger.info("pageHandler.sliderValue changed", context: ["sliderValue": newValue])
-                if !store.showsSliderPreview {
+            .onChange(of: sliderValue, perform: { newValue in
+                Logger.info("sliderValue changed", context: ["sliderValue": newValue])
+                if !showsSliderPreview {
                     setPageIndex(sliderValue: newValue)
                 }
             })
-            .onChange(of: store.showsSliderPreview, perform: { newValue in
-                Logger.info("store.showsSliderPreview changed", context: ["isShown": newValue])
-                if !newValue { setPageIndex(sliderValue: pageHandler.sliderValue) }
+            .onChange(of: showsSliderPreview, perform: { newValue in
+                Logger.info("showsSliderPreview changed", context: ["isShown": newValue])
+                if !newValue { setPageIndex(sliderValue: sliderValue) }
                 setAutoPlayPolocy(.off)
             })
             .onChange(of: store.readingProgress, perform: { newValue in
                 Logger.info("store.readingProgress changed", context: ["readingProgress": newValue])
-                pageHandler.sliderValue = .init(newValue)
+                sliderValue = .init(newValue)
+                Logger.info("sliderValue.didSet", context: ["sliderValue": sliderValue])
+            })
+            .onChange(of: store.databaseLoadingState, perform: { newValue in
+                Logger.info("store.databaseLoadingState changed", context: ["state": newValue])
+                guard newValue == .idle, sliderValue > 0 else { return }
+                DispatchQueue.main.async {
+                    setPageIndex(sliderValue: sliderValue)
+                }
+            })
+            .onChange(of: store.forceRefreshID, perform: { _ in
+                guard sliderValue > 0 else { return }
+                DispatchQueue.main.async {
+                    setPageIndex(sliderValue: sliderValue)
+                }
             })
     }
 
@@ -201,17 +232,32 @@ struct ReadingView: View {
     }
 
     private func liveTextTriggers<C: View>(_ content: C) -> some View {
-        content
+        let webImageLoadSuccessIndices = store.webImageLoadSuccessIndices
+        let imageURLs = store.imageURLs
+        let recognitionLanguages = store.galleryDetail?.language.codes
+        return content
             .onChange(of: liveTextHandler.enablesLiveText, perform: { newValue in
                 Logger.info("liveTextHandler.enablesLiveText changed", context: ["isEnabled": newValue])
-                if newValue { store.webImageLoadSuccessIndices.forEach(analyzeImageForLiveText) }
+                if newValue {
+                    webImageLoadSuccessIndices.forEach {
+                        analyzeImageForLiveText(
+                            index: $0,
+                            imageURL: imageURLs[$0],
+                            recognitionLanguages: recognitionLanguages
+                        )
+                    }
+                }
             })
             .onChange(of: store.webImageLoadSuccessIndices, perform: { newValue in
-                Logger.info("store.webImageLoadSuccessIndices changed", context: [
-                    "count": store.webImageLoadSuccessIndices.count
-                ])
+                Logger.info("store.webImageLoadSuccessIndices changed", context: ["count": newValue.count])
                 if liveTextHandler.enablesLiveText {
-                    newValue.forEach(analyzeImageForLiveText)
+                    newValue.forEach {
+                        analyzeImageForLiveText(
+                            index: $0,
+                            imageURL: imageURLs[$0],
+                            recognitionLanguages: recognitionLanguages
+                        )
+                    }
                 }
             })
     }
@@ -257,28 +303,33 @@ struct ReadingView: View {
 
 // MARK: Handler methods
 extension ReadingView {
-    func setPageIndex(sliderValue: Float) {
-        let newValue = pageHandler.mapToPager(
-            index: .init(sliderValue), setting: setting
-        )
-        if page.index != newValue {
-            page.update(.new(index: newValue))
-            Logger.info("Pager.update", context: ["update": newValue])
+    func setPagerIndex(_ newValue: Int) {
+        let upperBound = max(store.state.containerDataSource(setting: setting).count - 1, 0)
+        let clampedValue = min(max(newValue, 0), upperBound)
+        if pagerIndex != clampedValue {
+            pagerIndex = clampedValue
+            Logger.info("Pager.update", context: ["update": clampedValue])
         }
+    }
+    func setPageIndex(sliderValue: Float) {
+        let roundedSliderValue = sliderValue.rounded()
+        let newValue = pageHandler.mapToPager(
+            index: .init(roundedSliderValue), setting: setting
+        )
+        setPagerIndex(newValue)
     }
     func setAutoPlayPolocy(_ policy: AutoPlayPolicy) {
         autoPlayHandler.setPolicy(policy, updatePageAction: {
-            page.update(.next)
-            Logger.info("Pager.update", context: ["update": "next"])
+            setPagerIndex(pagerIndex + 1)
         })
     }
-    func analyzeImageForLiveText(index: Int) {
+    func analyzeImageForLiveText(index: Int, imageURL: URL?, recognitionLanguages: [String]?) {
         Logger.info("analyzeImageForLiveText", context: ["index": index])
         guard liveTextHandler.liveTextGroups[index] == nil else {
             Logger.info("analyzeImageForLiveText duplicated", context: ["index": index])
             return
         }
-        guard let key = store.imageURLs[index]?.absoluteString else {
+        guard let key = imageURL?.absoluteString else {
             Logger.info("analyzeImageForLiveText URL not found", context: ["index": index])
             return
         }
@@ -287,8 +338,10 @@ extension ReadingView {
             case .success(let result):
                 if let image = result.image, let cgImage = image.cgImage {
                     liveTextHandler.analyzeImage(
-                        cgImage, size: image.size, index: index, recognitionLanguages:
-                            store.galleryDetail?.language.codes
+                        cgImage,
+                        size: image.size,
+                        index: index,
+                        recognitionLanguages: recognitionLanguages
                     )
                 } else {
                     Logger.info("analyzeImageForLiveText image not found", context: ["index": index])
@@ -315,9 +368,7 @@ extension ReadingView {
                 gestureHandler.onSingleTapGestureEnded(
                     readingDirection: setting.readingDirection,
                     setPageIndexOffsetAction: {
-                        let newValue = page.index + $0
-                        page.update(.new(index: newValue))
-                        Logger.info("Pager.update", context: ["update": newValue])
+                        setPagerIndex(pagerIndex + $0)
                     },
                     toggleShowsPanelAction: { store.send(.toggleShowsPanel) }
                 )

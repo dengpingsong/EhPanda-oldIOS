@@ -5,6 +5,7 @@
 
 import SwiftUI
 import SwiftUIPager
+import ComposableArchitecture
 
 struct AdvancedList<Element, ID, PageView, G>: View
 where PageView: View, Element: Equatable, ID: Hashable, G: Gesture {
@@ -33,57 +34,65 @@ where PageView: View, Element: Equatable, ID: Hashable, G: Gesture {
 
     var body: some View {
         ScrollViewReader { proxy in
-            if #available(iOS 18.0, *) {
-                ScrollView(showsIndicators: false) {
-                    LazyVStack(spacing: spacing) {
-                        ForEach(data, id: id) { index in
-                            content(index)
-                                .gesture(gesture)
+            WithPerceptionTracking {
+                if #available(iOS 18.0, *) {
+                    ScrollView(showsIndicators: false) {
+                        LazyVStack(spacing: spacing) {
+                            ForEach(data, id: id) { index in
+                                WithPerceptionTracking {
+                                    content(index)
+                                        .gesture(gesture)
+                                }
+                            }
+                        }
+                        .scrollTargetLayout()
+                        .onAppear { tryScrollTo(id: pagerModel.index + 1, proxy: proxy) }
+                    }
+                    .scrollPosition(id: $scrollPositionID, anchor: .center)
+                    .onScrollPhaseChange { _, newValue in
+                        if newValue == .idle, let index = scrollPositionID {
+                            performingChanges = true
+                            pagerModel.update(.new(index: index - 1))
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                performingChanges = false
+                            }
                         }
                     }
-                    .scrollTargetLayout()
-                    .onAppear { tryScrollTo(id: pagerModel.index + 1, proxy: proxy) }
-                }
-                .scrollPosition(id: $scrollPositionID, anchor: .center)
-                .onScrollPhaseChange { _, newValue in
-                    if newValue == .idle, let index = scrollPositionID {
-                        performingChanges = true
-                        pagerModel.update(.new(index: index - 1))
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                            performingChanges = false
-                        }
+                    .onChange(of: pagerModel.index) { newValue in
+                        tryScrollTo(id: newValue + 1, proxy: proxy)
                     }
-                }
-                .onChange(of: pagerModel.index) { newValue in
-                    tryScrollTo(id: newValue + 1, proxy: proxy)
-                }
-            } else if #available(iOS 17.0, *) {
-                ScrollView(showsIndicators: false) {
-                    LazyVStack(spacing: spacing) {
-                        ForEach(data, id: id) { index in
-                            content(index)
-                                .gesture(gesture)
+                } else if #available(iOS 17.0, *) {
+                    ScrollView(showsIndicators: false) {
+                        LazyVStack(spacing: spacing) {
+                            ForEach(data, id: id) { index in
+                                WithPerceptionTracking {
+                                    content(index)
+                                        .gesture(gesture)
+                                }
+                            }
                         }
+                        .scrollTargetLayout()
+                        .onAppear { tryScrollTo(id: pagerModel.index + 1, proxy: proxy) }
                     }
-                    .scrollTargetLayout()
-                    .onAppear { tryScrollTo(id: pagerModel.index + 1, proxy: proxy) }
-                }
-                .scrollPosition(id: $scrollPositionID, anchor: .center)
-                .onChange(of: pagerModel.index) { newValue in
-                    tryScrollTo(id: newValue + 1, proxy: proxy)
-                }
-            } else {
-                ScrollView(showsIndicators: false) {
-                    LazyVStack(spacing: spacing) {
-                        ForEach(data, id: id) { index in
-                            content(index)
-                                .gesture(gesture)
+                    .scrollPosition(id: $scrollPositionID, anchor: .center)
+                    .onChange(of: pagerModel.index) { newValue in
+                        tryScrollTo(id: newValue + 1, proxy: proxy)
+                    }
+                } else {
+                    ScrollView(showsIndicators: false) {
+                        LazyVStack(spacing: spacing) {
+                            ForEach(data, id: id) { index in
+                                WithPerceptionTracking {
+                                    content(index)
+                                        .gesture(gesture)
+                                }
+                            }
                         }
+                        .onAppear { tryScrollTo(id: pagerModel.index + 1, proxy: proxy) }
                     }
-                    .onAppear { tryScrollTo(id: pagerModel.index + 1, proxy: proxy) }
-                }
-                .onChange(of: pagerModel.index) { newValue in
-                    tryScrollTo(id: newValue + 1, proxy: proxy)
+                    .onChange(of: pagerModel.index) { newValue in
+                        tryScrollTo(id: newValue + 1, proxy: proxy)
+                    }
                 }
             }
         }
@@ -91,7 +100,13 @@ where PageView: View, Element: Equatable, ID: Hashable, G: Gesture {
 
     private func tryScrollTo(id: Int, proxy: ScrollViewProxy) {
         if !performingChanges {
-            scrollPositionID = id
+            if #available(iOS 17.0, *) {
+                scrollPositionID = id
+            } else {
+                withAnimation(.default) {
+                    proxy.scrollTo(id, anchor: .center)
+                }
+            }
         }
     }
 }

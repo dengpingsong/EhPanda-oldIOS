@@ -230,6 +230,10 @@ struct DetailReducer {
                 }
 
             case .updateReadingProgress(let progress):
+                state.readingState.gallery = state.gallery
+                state.readingState.galleryDetail = state.galleryDetail
+                state.readingState.previewURLs = state.galleryPreviewURLs
+                state.readingState.readingProgress = progress
                 return .run { [state] _ in
                     await databaseClient.updateReadingProgress(gid: state.gallery.id, progress: progress)
                 }

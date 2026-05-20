@@ -34,53 +34,59 @@ struct PreviewsView: View {
     }
 
     var body: some View {
-        ScrollView {
-            LazyVGrid(columns: gridItems) {
-                ForEach(1..<store.gallery.pageCount + 1, id: \.self) { index in
-                    VStack {
-                        let (url, modifier) = PreviewResolver.getPreviewConfigs(
-                            originalURL: store.previewURLs[index]
-                        )
-                        Button {
-                            store.send(.updateReadingProgress(index))
-                            store.send(.setNavigation(.reading()))
-                        } label: {
-                            KFImage.url(url, cacheKey: store.previewURLs[index]?.absoluteString)
-                                .placeholder({ Placeholder(style: .activity(ratio: Defaults.ImageSize.previewAspect)) })
-                                .imageModifier(modifier)
-                                .fade(duration: 0.25)
-                                .resizable()
-                                .scaledToFit()
-                        }
-                        Text("\(index)")
-                            .font(DeviceUtil.isPadWidth ? .callout : .caption)
-                            .foregroundColor(.secondary)
-                    }
-                    .onAppear {
-                        if store.databaseLoadingState != .loading
-                            && store.previewURLs[index] == nil && (index - 1) % 10 == 0
-                        {
-                            store.send(.fetchPreviewURLs(index))
+        WithPerceptionTracking {
+            ScrollView {
+                LazyVGrid(columns: gridItems) {
+                    ForEach(1..<store.gallery.pageCount + 1, id: \.self) { index in
+                        WithPerceptionTracking {
+                            VStack {
+                                let (url, modifier) = PreviewResolver.getPreviewConfigs(
+                                    originalURL: store.previewURLs[index]
+                                )
+                                Button {
+                                    store.send(.updateReadingProgress(index))
+                                    store.send(.setNavigation(.reading()))
+                                } label: {
+                                    KFImage.url(url, cacheKey: store.previewURLs[index]?.absoluteString)
+                                        .placeholder({ Placeholder(style: .activity(ratio: Defaults.ImageSize.previewAspect)) })
+                                        .imageModifier(modifier)
+                                        .fade(duration: 0.25)
+                                        .resizable()
+                                        .scaledToFit()
+                                }
+                                Text("\(index)")
+                                    .font(DeviceUtil.isPadWidth ? .callout : .caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            .onAppear {
+                                if store.databaseLoadingState != .loading
+                                    && store.previewURLs[index] == nil && (index - 1) % 10 == 0
+                                {
+                                    store.send(.fetchPreviewURLs(index))
+                                }
+                            }
                         }
                     }
                 }
+                .padding(.horizontal)
+                .padding(.bottom)
+                .id(store.databaseLoadingState)
             }
-            .padding(.horizontal)
-            .padding(.bottom)
-            .id(store.databaseLoadingState)
+            .fullScreenCover(item: $store.route.sending(\.setNavigation).reading) { _ in
+                WithPerceptionTracking {
+                    ReadingView(
+                        store: store.scope(state: \.readingState, action: \.reading),
+                        gid: gid, setting: $setting, blurRadius: blurRadius
+                    )
+                    .accentColor(setting.accentColor)
+                    .autoBlur(radius: blurRadius)
+                }
+            }
+            .onAppear {
+                store.send(.fetchDatabaseInfos(gid))
+            }
+            .navigationTitle(L10n.Localizable.PreviewsView.Title.previews)
         }
-        .fullScreenCover(item: $store.route.sending(\.setNavigation).reading) { _ in
-            ReadingView(
-                store: store.scope(state: \.readingState, action: \.reading),
-                gid: gid, setting: $setting, blurRadius: blurRadius
-            )
-            .accentColor(setting.accentColor)
-            .autoBlur(radius: blurRadius)
-        }
-        .onAppear {
-            store.send(.fetchDatabaseInfos(gid))
-        }
-        .navigationTitle(L10n.Localizable.PreviewsView.Title.previews)
     }
 }
 

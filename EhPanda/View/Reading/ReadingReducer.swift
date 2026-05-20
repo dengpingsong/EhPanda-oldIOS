@@ -73,7 +73,6 @@ struct ReadingReducer {
         var mpvSkipServerIdentifiers = [Int: String]()
 
         var showsPanel = false
-        var showsSliderPreview = false
 
         // Update
         func update<T>(stored: inout [Int: T], new: [Int: T], replaceExisting: Bool = true) {
@@ -187,9 +186,6 @@ struct ReadingReducer {
 
     var body: some Reducer<State, Action> {
         BindingReducer()
-            .onChange(of: \.showsSliderPreview) { _, _ in
-                Reduce({ _, _ in .run(operation: { _ in hapticsClient.generateFeedback(.soft) }) })
-            }
 
         Reduce { state, action in
             switch action {
@@ -312,6 +308,7 @@ struct ReadingReducer {
                 }
 
             case .syncReadingProgress(let progress):
+                state.readingProgress = progress
                 return .run { [state] _ in
                     await databaseClient.updateReadingProgress(gid: state.gallery.id, progress: progress)
                 }
@@ -362,7 +359,9 @@ struct ReadingReducer {
                 state.imageURLs = galleryState.imageURLs
                 state.thumbnailURLs = galleryState.thumbnailURLs
                 state.originalImageURLs =  galleryState.originalImageURLs
-                state.readingProgress = galleryState.readingProgress
+                if state.readingProgress == .zero {
+                    state.readingProgress = galleryState.readingProgress
+                }
                 state.databaseLoadingState = .idle
                 return .none
 

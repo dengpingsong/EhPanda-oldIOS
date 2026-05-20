@@ -25,60 +25,62 @@ struct SearchRootView: View {
     }
 
     private var searchContent: some View {
-        ScrollView(showsIndicators: false) {
-            SuggestionsPanel(
-                historyKeywords: store.historyKeywords.reversed(),
-                historyGalleries: store.historyGalleries,
-                quickSearchWords: store.quickSearchWords,
-                navigateGalleryAction: { store.send(.setNavigation(.detail($0))) },
-                navigateQuickSearchAction: { store.send(.setNavigation(.quickSearch())) },
-                searchKeywordAction: { keyword in
-                    store.send(.setKeyword(keyword))
-                    store.send(.setNavigation(.search))
-                },
-                removeKeywordAction: { store.send(.removeHistoryKeyword($0)) }
-            )
-        }
-        .sheet(item: $store.route.sending(\.setNavigation).filters) { _ in
-            WithPerceptionTracking {
-                FiltersView(store: store.scope(state: \.filtersState, action: \.filters))
-                    .autoBlur(radius: blurRadius).environment(\.inSheet, true)
-            }
-        }
-        .sheet(item: $store.route.sending(\.setNavigation).quickSearch) { _ in
-            WithPerceptionTracking {
-                QuickSearchView(
-                    store: store.scope(state: \.quickSearchState, action: \.quickSearch)
-                ) { keyword in
-                    store.send(.setNavigation(nil))
-                    store.send(.setKeyword(keyword))
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        WithPerceptionTracking {
+            ScrollView(showsIndicators: false) {
+                SuggestionsPanel(
+                    historyKeywords: store.historyKeywords.reversed(),
+                    historyGalleries: store.historyGalleries,
+                    quickSearchWords: store.quickSearchWords,
+                    navigateGalleryAction: { store.send(.setNavigation(.detail($0))) },
+                    navigateQuickSearchAction: { store.send(.setNavigation(.quickSearch())) },
+                    searchKeywordAction: { keyword in
+                        store.send(.setKeyword(keyword))
                         store.send(.setNavigation(.search))
-                    }
-                }
-                .accentColor(setting.accentColor)
-                .autoBlur(radius: blurRadius)
-            }
-        }
-        .searchable(text: $store.keyword)
-        .searchSuggestions {
-            WithPerceptionTracking {
-                TagSuggestionView(
-                    keyword: $store.keyword, translations: tagTranslator.translations,
-                    showsImages: setting.showsImagesInTags, isEnabled: setting.showsTagsSearchSuggestion
+                    },
+                    removeKeywordAction: { store.send(.removeHistoryKeyword($0)) }
                 )
             }
+            .sheet(item: $store.route.sending(\.setNavigation).filters) { _ in
+                WithPerceptionTracking {
+                    FiltersView(store: store.scope(state: \.filtersState, action: \.filters))
+                        .autoBlur(radius: blurRadius).environment(\.inSheet, true)
+                }
+            }
+            .sheet(item: $store.route.sending(\.setNavigation).quickSearch) { _ in
+                WithPerceptionTracking {
+                    QuickSearchView(
+                        store: store.scope(state: \.quickSearchState, action: \.quickSearch)
+                    ) { keyword in
+                        store.send(.setNavigation(nil))
+                        store.send(.setKeyword(keyword))
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            store.send(.setNavigation(.search))
+                        }
+                    }
+                    .accentColor(setting.accentColor)
+                    .autoBlur(radius: blurRadius)
+                }
+            }
+            .searchable(text: $store.keyword)
+            .searchSuggestions {
+                WithPerceptionTracking {
+                    TagSuggestionView(
+                        keyword: $store.keyword, translations: tagTranslator.translations,
+                        showsImages: setting.showsImagesInTags, isEnabled: setting.showsTagsSearchSuggestion
+                    )
+                }
+            }
+            .onSubmit(of: .search) {
+                store.send(.setNavigation(.search))
+            }
+            .onAppear {
+                store.send(.fetchHistoryGalleries)
+                store.send(.fetchDatabaseInfos)
+            }
+            .background(navigationLinks)
+            .toolbar(content: toolbar)
+            .navigationTitle(L10n.Localizable.SearchView.Title.search)
         }
-        .onSubmit(of: .search) {
-            store.send(.setNavigation(.search))
-        }
-        .onAppear {
-            store.send(.fetchHistoryGalleries)
-            store.send(.fetchDatabaseInfos)
-        }
-        .background(navigationLinks)
-        .toolbar(content: toolbar)
-        .navigationTitle(L10n.Localizable.SearchView.Title.search)
     }
 
     var body: some View {
@@ -107,7 +109,7 @@ struct SearchRootView: View {
                         .overlay {
                             WithPerceptionTracking {
                                 if store.historyKeywords.isEmpty && store.historyGalleries.isEmpty {
-                                    Text(" ").opacity(0)
+                                    Text(" ").opacity(0).allowsHitTesting(false)
                                 }
                             }
                         }

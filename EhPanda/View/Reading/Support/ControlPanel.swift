@@ -5,6 +5,7 @@
 
 import SwiftUI
 import Kingfisher
+import ComposableArchitecture
 
 // MARK: ControlPanel
 struct ControlPanel<G: Gesture>: View {
@@ -51,36 +52,38 @@ struct ControlPanel<G: Gesture>: View {
     }
 
     private var title: String {
-        ["\(max(Int(sliderValue), 1))", "\(Int(range.upperBound))"].joined(separator: " / ")
+        ["\(max(Int(sliderValue.rounded()), 1))", "\(Int(range.upperBound))"].joined(separator: " / ")
     }
 
     var body: some View {
-        VStack {
-            UpperPanel(
-                title: title,
-                setting: $setting,
-                enablesLiveText: $enablesLiveText,
-                autoPlayPolicy: $autoPlayPolicy,
-                dismissAction: dismissAction,
-                navigateSettingAction: navigateSettingAction,
-                reloadAllImagesAction: reloadAllImagesAction,
-                retryAllFailedImagesAction: retryAllFailedImagesAction
-            )
-            .offset(y: showsPanel ? 0 : -50)
-            Spacer()
-            if range.upperBound > range.lowerBound {
-                LowerPanel(
-                    showsSliderPreview: $showsSliderPreview,
-                    sliderValue: $sliderValue, previewURLs: previewURLs, range: range,
-                    isReversed: setting.readingDirection == .rightToLeft,
-                    dismissGesture: dismissGesture, dismissAction: dismissAction,
-                    fetchPreviewURLsAction: fetchPreviewURLsAction
+        WithPerceptionTracking {
+            VStack {
+                UpperPanel(
+                    title: title,
+                    setting: $setting,
+                    enablesLiveText: $enablesLiveText,
+                    autoPlayPolicy: $autoPlayPolicy,
+                    dismissAction: dismissAction,
+                    navigateSettingAction: navigateSettingAction,
+                    reloadAllImagesAction: reloadAllImagesAction,
+                    retryAllFailedImagesAction: retryAllFailedImagesAction
                 )
-                .animation(.default, value: showsSliderPreview)
-                .offset(y: showsPanel ? 0 : 50)
+                .offset(y: showsPanel ? 0 : -50)
+                Spacer()
+                if range.upperBound > range.lowerBound {
+                    LowerPanel(
+                        showsSliderPreview: $showsSliderPreview,
+                        sliderValue: $sliderValue, previewURLs: previewURLs, range: range,
+                        isReversed: setting.readingDirection == .rightToLeft,
+                        dismissGesture: dismissGesture, dismissAction: dismissAction,
+                        fetchPreviewURLsAction: fetchPreviewURLsAction
+                    )
+                    .animation(.default, value: showsSliderPreview)
+                    .offset(y: showsPanel ? 0 : 50)
+                }
             }
+            .opacity(showsPanel ? 1 : 0).disabled(!showsPanel)
         }
-        .opacity(showsPanel ? 1 : 0).disabled(!showsPanel)
     }
 }
 
@@ -117,101 +120,110 @@ private struct UpperPanel: View {
     }
 
     var body: some View {
-        HStack {
-            HStack(spacing: 16) {
-                Button(action: dismissAction) {
-                    Image(systemSymbol: .xmark)
+        WithPerceptionTracking {
+            HStack {
+                HStack(spacing: 16) {
+                    Button(action: dismissAction) {
+                        Image(systemSymbol: .xmark)
+                            .font(.title2)
+                            .frame(width: 44, height: 44)
+                    }
+
+                    Text(title)
                         .font(.title2)
-                        .frame(width: 44, height: 44)
+                        .fontWeight(.bold)
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
                 }
 
-                Text(title)
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .monospacedDigit()
-                    .lineLimit(1)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-            }
+                Spacer()
 
-            Spacer()
-
-            HStack(spacing: 20) {
-                Button {
-                    enablesLiveText.toggle()
-                } label: {
-                    Image(systemSymbol: .viewfinderCircle)
-                        .symbolVariant(enablesLiveText ? .fill : .none)
-                        .font(.title2)
-                }
-
-                if DeviceUtil.isLandscape && setting.readingDirection != .vertical {
-                    Menu {
-                        Button {
-                            setting.enablesDualPageMode.toggle()
-                        } label: {
-                            Text(L10n.Localizable.ReadingView.ToolbarItem.Title.dualPageMode)
-                            if setting.enablesDualPageMode {
-                                Image(systemSymbol: .checkmark)
-                            }
-                        }
-                        Button {
-                            setting.exceptCover.toggle()
-                        } label: {
-                            Text(L10n.Localizable.ReadingView.ToolbarItem.Title.exceptTheCover)
-                            if setting.exceptCover {
-                                Image(systemSymbol: .checkmark)
-                            }
-                        }
-                        .disabled(!setting.enablesDualPageMode)
+                HStack(spacing: 20) {
+                    Button {
+                        enablesLiveText.toggle()
                     } label: {
-                        Image(systemSymbol: .rectangleSplit2x1)
-                            .symbolVariant(setting.enablesDualPageMode ? .fill : .none)
+                        Image(systemSymbol: .viewfinderCircle)
+                            .symbolVariant(enablesLiveText ? .fill : .none)
                             .font(.title2)
                     }
-                }
 
-                Menu {
-                    Text(L10n.Localizable.ReadingView.ToolbarItem.Title.autoPlay).foregroundColor(.secondary)
-                    ForEach(AutoPlayPolicy.allCases) { policy in
-                        Button {
-                            autoPlayPolicy = policy
+                    if DeviceUtil.isLandscape && setting.readingDirection != .vertical {
+                        Menu {
+                            WithPerceptionTracking {
+                                Button {
+                                    setting.enablesDualPageMode.toggle()
+                                } label: {
+                                    Text(L10n.Localizable.ReadingView.ToolbarItem.Title.dualPageMode)
+                                    if setting.enablesDualPageMode {
+                                        Image(systemSymbol: .checkmark)
+                                    }
+                                }
+                                Button {
+                                    setting.exceptCover.toggle()
+                                } label: {
+                                    Text(L10n.Localizable.ReadingView.ToolbarItem.Title.exceptTheCover)
+                                    if setting.exceptCover {
+                                        Image(systemSymbol: .checkmark)
+                                    }
+                                }
+                                .disabled(!setting.enablesDualPageMode)
+                            }
                         } label: {
-                            Text(policy.value)
-                            if autoPlayPolicy == policy {
-                                Image(systemSymbol: .checkmark)
+                            Image(systemSymbol: .rectangleSplit2x1)
+                                .symbolVariant(setting.enablesDualPageMode ? .fill : .none)
+                                .font(.title2)
+                        }
+                    }
+
+                    Menu {
+                        WithPerceptionTracking {
+                            Text(L10n.Localizable.ReadingView.ToolbarItem.Title.autoPlay).foregroundColor(.secondary)
+                            ForEach(AutoPlayPolicy.allCases) { policy in
+                                WithPerceptionTracking {
+                                    Button {
+                                        autoPlayPolicy = policy
+                                    } label: {
+                                        Text(policy.value)
+                                        if autoPlayPolicy == policy {
+                                            Image(systemSymbol: .checkmark)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } label: {
+                        Image(systemSymbol: .timer)
+                            .font(.title2)
+                    }
+                    .buttonStyle(.borderless)
+
+                    ToolbarFeaturesMenu {
+                        WithPerceptionTracking {
+                            Button(action: retryAllFailedImagesAction) {
+                                Image(systemSymbol: .exclamationmarkArrowTriangle2Circlepath)
+                                Text(L10n.Localizable.ReadingView.ToolbarItem.Button.retryAllFailedImages)
+                            }
+                            Button(action: reloadAllImagesAction) {
+                                Image(systemSymbol: .arrowCounterclockwise)
+                                Text(L10n.Localizable.ReadingView.ToolbarItem.Button.reloadAllImages)
+                            }
+                            Button(action: navigateSettingAction) {
+                                Image(systemSymbol: .gear)
+                                Text(L10n.Localizable.ReadingView.ToolbarItem.Button.readingSetting)
                             }
                         }
                     }
-                } label: {
-                    Image(systemSymbol: .timer)
-                        .font(.title2)
+                    .buttonStyle(.borderless)
+                    .font(.title2)
                 }
-                .buttonStyle(.borderless)
-
-                ToolbarFeaturesMenu {
-                    Button(action: retryAllFailedImagesAction) {
-                        Image(systemSymbol: .exclamationmarkArrowTriangle2Circlepath)
-                        Text(L10n.Localizable.ReadingView.ToolbarItem.Button.retryAllFailedImages)
-                    }
-                    Button(action: reloadAllImagesAction) {
-                        Image(systemSymbol: .arrowCounterclockwise)
-                        Text(L10n.Localizable.ReadingView.ToolbarItem.Button.reloadAllImages)
-                    }
-                    Button(action: navigateSettingAction) {
-                        Image(systemSymbol: .gear)
-                        Text(L10n.Localizable.ReadingView.ToolbarItem.Button.readingSetting)
-                    }
-                }
-                .buttonStyle(.borderless)
-                .font(.title2)
+                .padding(.vertical, 12)
+                .padding(.horizontal, 20)
             }
-            .padding(.vertical, 12)
+            .foregroundStyle(.primary)
             .padding(.horizontal, 20)
-            
         }
-        .foregroundStyle(.primary)
-        .padding(.horizontal, 20)
     }
 }
 
@@ -243,53 +255,50 @@ private struct LowerPanel<G: Gesture>: View {
     }
 
     var body: some View {
-        VStack(spacing: 30) {
-            Button(action: dismissAction) {
-                Image(systemSymbol: .xmark)
-                    .foregroundColor(.primary)
-                    .font(.title2)
-                    .frame(width: 44, height: 44)
-            }
-            
-            .gesture(dismissGesture)
-            .opacity(showsSliderPreview ? 0 : 1)
-
-            VStack(spacing: 0) {
-                SliderPreivew(
-                    showsSliderPreview: $showsSliderPreview,
-                    sliderValue: $sliderValue,
-                    previewURLs: previewURLs,
-                    range: range,
-                    isReversed: isReversed,
-                    fetchPreviewURLsAction: fetchPreviewURLsAction
-                )
-
-                HStack {
-                    Text(isReversed ? "\(Int(range.upperBound))" : "\(Int(range.lowerBound))")
-                        .fontWeight(.medium)
-                        .font(.caption)
-                        .padding()
-
-                    Slider(
-                        value: $sliderValue,
-                        in: range,
-                        onEditingChanged: { if !$0 { showsSliderPreview = false } }
-                    )
-                    .frame(width: DeviceUtil.windowW * 0.6)
-                    .rotationEffect(.init(degrees: isReversed ? 180 : 0))
-                    .simultaneousGesture(
-                        LongPressGesture(minimumDuration: .infinity, maximumDistance: .infinity)
-                            .onChanged({ if $0 { showsSliderPreview = true } })
-                    )
-
-                    Text(isReversed ? "\(Int(range.lowerBound))" : "\(Int(range.upperBound))")
-                        .fontWeight(.medium)
-                        .font(.caption)
-                        .padding()
+        WithPerceptionTracking {
+            VStack(spacing: 30) {
+                Button(action: dismissAction) {
+                    Image(systemSymbol: .xmark)
+                        .foregroundColor(.primary)
+                        .font(.title2)
+                        .frame(width: 44, height: 44)
                 }
+                .gesture(dismissGesture)
+                .opacity(showsSliderPreview ? 0 : 1)
+
+                VStack(spacing: 0) {
+                    SliderPreivew(
+                        showsSliderPreview: $showsSliderPreview,
+                        sliderValue: $sliderValue,
+                        previewURLs: previewURLs,
+                        range: range,
+                        isReversed: isReversed,
+                        fetchPreviewURLsAction: fetchPreviewURLsAction
+                    )
+
+                    HStack {
+                        Text(isReversed ? "\(Int(range.upperBound))" : "\(Int(range.lowerBound))")
+                            .fontWeight(.medium)
+                            .font(.caption)
+                            .padding()
+
+                        Slider(
+                            value: $sliderValue,
+                            in: range,
+                            step: 1,
+                            onEditingChanged: { isEditing in showsSliderPreview = isEditing }
+                        )
+                        .frame(width: DeviceUtil.windowW * 0.6)
+                        .rotationEffect(.init(degrees: isReversed ? 180 : 0))
+
+                        Text(isReversed ? "\(Int(range.lowerBound))" : "\(Int(range.upperBound))")
+                            .fontWeight(.medium)
+                            .font(.caption)
+                            .padding()
+                    }
+                }
+                .padding(.horizontal, SliderPreivew.outerPadding)
             }
-            
-            .padding(.horizontal, SliderPreivew.outerPadding)
         }
     }
 }
@@ -322,34 +331,38 @@ private struct SliderPreivew: View {
     }
 
     var body: some View {
-        HStack(spacing: previewSpacing) {
-            ForEach(previewsIndices, id: \.self) { index in
-                let (url, modifier) = PreviewResolver.getPreviewConfigs(originalURL: previewURLs[index])
-                VStack {
-                    KFImage.url(url, cacheKey: previewURLs[index]?.absoluteString)
-                        .placeholder({ Placeholder(style: .activity(ratio: Defaults.ImageSize.previewAspect)) })
-                        .fade(duration: 0.25)
-                        .imageModifier(modifier)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: previewWidth, height: showsSliderPreview ? previewHeight : 0)
+        WithPerceptionTracking {
+            HStack(spacing: previewSpacing) {
+                ForEach(previewsIndices, id: \.self) { index in
+                    WithPerceptionTracking {
+                        let (url, modifier) = PreviewResolver.getPreviewConfigs(originalURL: previewURLs[index])
+                        VStack {
+                            KFImage.url(url, cacheKey: previewURLs[index]?.absoluteString)
+                                .placeholder({ Placeholder(style: .activity(ratio: Defaults.ImageSize.previewAspect)) })
+                                .fade(duration: 0.25)
+                                .imageModifier(modifier)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: previewWidth, height: showsSliderPreview ? previewHeight : 0)
 
-                    Text("\(index)")
-                        .font(DeviceUtil.isPadWidth ? .callout : .caption)
-                        .foregroundColor(index == Int(sliderValue) ? .accentColor : .secondary)
-                }
-                .onAppear {
-                    if previewURLs[index] == nil && checkIndex(index) {
-                        fetchPreviewURLsAction(index)
+                            Text("\(index)")
+                                .font(DeviceUtil.isPadWidth ? .callout : .caption)
+                                .foregroundColor(index == Int(sliderValue.rounded()) ? .accentColor : .secondary)
+                        }
+                        .onAppear {
+                            if previewURLs[index] == nil && checkIndex(index) {
+                                fetchPreviewURLsAction(index)
+                            }
+                        }
+                        .opacity(checkIndex(index) ? 1 : 0)
                     }
                 }
-                .opacity(checkIndex(index) ? 1 : 0)
             }
+            .opacity(showsSliderPreview ? 1 : 0)
+            .padding(.vertical, verticalPadding)
+            .padding(.horizontal, horizontalPadding)
+            .frame(height: showsSliderPreview ? previewHeight + verticalPadding * 2 : 0)
         }
-        .opacity(showsSliderPreview ? 1 : 0)
-        .padding(.vertical, verticalPadding)
-        .padding(.horizontal, horizontalPadding)
-        .frame(height: showsSliderPreview ? previewHeight + verticalPadding * 2 : 0)
     }
 }
 
@@ -363,7 +376,7 @@ private extension SliderPreivew {
     }
     var previewsIndices: [Int] {
         guard !previewURLs.isEmpty else { return [] }
-        let currentIndex = Int(sliderValue)
+        let currentIndex = Int(sliderValue.rounded())
         let distance = (previewsCount - 1) / 2
         let lowerBound = currentIndex - distance
         let upperBound = currentIndex + distance

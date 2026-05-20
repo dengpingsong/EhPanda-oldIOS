@@ -114,6 +114,7 @@ struct QuickSearchView: View {
             } label: {
                 Image(systemSymbol: .plus)
             }
+            EditButton()
         }
     }
 }

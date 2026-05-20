@@ -5,13 +5,7 @@
 
 import SwiftUI
 
-final class PageHandler: ObservableObject {
-    @Published var sliderValue: Float = 1 {
-        didSet {
-            Logger.info("sliderValue.didSet", context: ["sliderValue": sliderValue])
-        }
-    }
-
+final class PageHandler {
     func mapFromPager(index: Int, pageCount: Int, setting: Setting, isLandscape: Bool = DeviceUtil.isLandscape) -> Int {
         guard isLandscape && setting.enablesDualPageMode
                 && setting.readingDirection != .vertical
