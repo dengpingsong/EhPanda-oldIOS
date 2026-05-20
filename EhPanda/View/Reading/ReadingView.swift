@@ -37,56 +37,60 @@ struct ReadingView: View {
     }
 
     var body: some View {
-        changeTriggers(content: { content })
-            .sheet(item: $store.route.sending(\.setNavigation).readingSetting) { _ in
-                NavigationView {
-                    ReadingSettingView(
-                        readingDirection: $setting.readingDirection,
-                        prefetchLimit: $setting.prefetchLimit,
-                        enablesLandscape: $setting.enablesLandscape,
-                        contentDividerHeight: $setting.contentDividerHeight,
-                        maximumScaleFactor: $setting.maximumScaleFactor,
-                        doubleTapScaleFactor: $setting.doubleTapScaleFactor
-                    )
-                    .toolbar {
-                        if !DeviceUtil.isPad && DeviceUtil.isLandscape {
-                            CustomToolbarItem(placement: .cancellationAction) {
-                                Button {
-                                    store.send(.setNavigation(nil))
-                                } label: {
-                                    Image(systemSymbol: .chevronDown)
+        WithPerceptionTracking {
+            changeTriggers(content: { content })
+                .sheet(item: $store.route.sending(\.setNavigation).readingSetting) { _ in
+                    WithPerceptionTracking {
+                        NavigationView {
+                            ReadingSettingView(
+                                readingDirection: $setting.readingDirection,
+                                prefetchLimit: $setting.prefetchLimit,
+                                enablesLandscape: $setting.enablesLandscape,
+                                contentDividerHeight: $setting.contentDividerHeight,
+                                maximumScaleFactor: $setting.maximumScaleFactor,
+                                doubleTapScaleFactor: $setting.doubleTapScaleFactor
+                            )
+                            .toolbar {
+                                if !DeviceUtil.isPad && DeviceUtil.isLandscape {
+                                    CustomToolbarItem(placement: .cancellationAction) {
+                                        Button {
+                                            store.send(.setNavigation(nil))
+                                        } label: {
+                                            Image(systemSymbol: .chevronDown)
+                                        }
+                                    }
                                 }
                             }
                         }
+                        .accentColor(setting.accentColor)
+                        .tint(setting.accentColor)
+                        .autoBlur(radius: blurRadius)
+                        .navigationViewStyle(.stack)
                     }
                 }
-                .accentColor(setting.accentColor)
-                .tint(setting.accentColor)
-                .autoBlur(radius: blurRadius)
-                .navigationViewStyle(.stack)
-            }
-            .sheet(item: $store.route.sending(\.setNavigation).share) { shareItemBox in
-                ActivityView(activityItems: [shareItemBox.wrappedValue.associatedValue])
-                    .accentColor(setting.accentColor)
-                    .autoBlur(radius: blurRadius)
-            }
-            .progressHUD(
-                config: store.hudConfig,
-                unwrapping: $store.route,
-                case: \.hud
-            )
+                .sheet(item: $store.route.sending(\.setNavigation).share) { shareItemBox in
+                    ActivityView(activityItems: [shareItemBox.wrappedValue.associatedValue])
+                        .accentColor(setting.accentColor)
+                        .autoBlur(radius: blurRadius)
+                }
+                .progressHUD(
+                    config: store.hudConfig,
+                    unwrapping: $store.route,
+                    case: \.hud
+                )
 
-            .animation(.linear(duration: 0.1), value: gestureHandler.offset)
-            .animation(.default, value: liveTextHandler.enablesLiveText)
-            .animation(.default, value: liveTextHandler.liveTextGroups)
-            .animation(.default, value: gestureHandler.scale)
-            .animation(.default, value: store.showsPanel)
-            .statusBar(hidden: !store.showsPanel)
-            .onDisappear {
-                liveTextHandler.cancelRequests()
-                setAutoPlayPolocy(.off)
-            }
-            .onAppear { store.send(.onAppear(gid, setting.enablesLandscape)) }
+                .animation(.linear(duration: 0.1), value: gestureHandler.offset)
+                .animation(.default, value: liveTextHandler.enablesLiveText)
+                .animation(.default, value: liveTextHandler.liveTextGroups)
+                .animation(.default, value: gestureHandler.scale)
+                .animation(.default, value: store.showsPanel)
+                .statusBar(hidden: !store.showsPanel)
+                .onDisappear {
+                    liveTextHandler.cancelRequests()
+                    setAutoPlayPolocy(.off)
+                }
+                .onAppear { store.send(.onAppear(gid, setting.enablesLandscape)) }
+        }
     }
 
     var content: some View {
@@ -221,31 +225,33 @@ struct ReadingView: View {
     }
 
     @ViewBuilder private func imageStack(index: Int) -> some View {
-        let imageStackConfig = store.state.imageContainerConfigs(index: index, setting: setting)
-        let isDualPage = setting.enablesDualPageMode && setting.readingDirection != .vertical && DeviceUtil.isLandscape
-        HorizontalImageStack(
-            index: index,
-            isDualPage: isDualPage,
-            isDatabaseLoading: store.databaseLoadingState != .idle,
-            backgroundColor: backgroundColor,
-            config: imageStackConfig,
-            imageURLs: store.imageURLs,
-            originalImageURLs: store.originalImageURLs,
-            loadingStates: store.imageURLLoadingStates,
-            enablesLiveText: liveTextHandler.enablesLiveText,
-            liveTextGroups: liveTextHandler.liveTextGroups,
-            focusedLiveTextGroup: liveTextHandler.focusedLiveTextGroup,
-            liveTextTapAction: liveTextHandler.setFocusedLiveTextGroup,
-            fetchAction: { store.send(.fetchImageURLs($0)) },
-            refetchAction: { store.send(.refetchImageURLs($0)) },
-            prefetchAction: { store.send(.prefetchImages($0, setting.prefetchLimit)) },
-            loadRetryAction: { store.send(.onWebImageRetry($0)) },
-            loadSucceededAction: { store.send(.onWebImageSucceeded($0)) },
-            loadFailedAction: { store.send(.onWebImageFailed($0)) },
-            copyImageAction: { store.send(.copyImage($0)) },
-            saveImageAction: { store.send(.saveImage($0)) },
-            shareImageAction: { store.send(.shareImage($0)) }
-        )
+        WithPerceptionTracking {
+            let imageStackConfig = store.state.imageContainerConfigs(index: index, setting: setting)
+            let isDualPage = setting.enablesDualPageMode && setting.readingDirection != .vertical && DeviceUtil.isLandscape
+            HorizontalImageStack(
+                index: index,
+                isDualPage: isDualPage,
+                isDatabaseLoading: store.databaseLoadingState != .idle,
+                backgroundColor: backgroundColor,
+                config: imageStackConfig,
+                imageURLs: store.imageURLs,
+                originalImageURLs: store.originalImageURLs,
+                loadingStates: store.imageURLLoadingStates,
+                enablesLiveText: liveTextHandler.enablesLiveText,
+                liveTextGroups: liveTextHandler.liveTextGroups,
+                focusedLiveTextGroup: liveTextHandler.focusedLiveTextGroup,
+                liveTextTapAction: liveTextHandler.setFocusedLiveTextGroup,
+                fetchAction: { store.send(.fetchImageURLs($0)) },
+                refetchAction: { store.send(.refetchImageURLs($0)) },
+                prefetchAction: { store.send(.prefetchImages($0, setting.prefetchLimit)) },
+                loadRetryAction: { store.send(.onWebImageRetry($0)) },
+                loadSucceededAction: { store.send(.onWebImageSucceeded($0)) },
+                loadFailedAction: { store.send(.onWebImageFailed($0)) },
+                copyImageAction: { store.send(.copyImage($0)) },
+                saveImageAction: { store.send(.saveImage($0)) },
+                shareImageAction: { store.send(.shareImage($0)) }
+            )
+        }
     }
 }
 

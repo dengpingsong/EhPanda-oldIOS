@@ -40,28 +40,34 @@ struct SearchRootView: View {
             )
         }
         .sheet(item: $store.route.sending(\.setNavigation).filters) { _ in
-            FiltersView(store: store.scope(state: \.filtersState, action: \.filters))
-                .autoBlur(radius: blurRadius).environment(\.inSheet, true)
+            WithPerceptionTracking {
+                FiltersView(store: store.scope(state: \.filtersState, action: \.filters))
+                    .autoBlur(radius: blurRadius).environment(\.inSheet, true)
+            }
         }
         .sheet(item: $store.route.sending(\.setNavigation).quickSearch) { _ in
-            QuickSearchView(
-                store: store.scope(state: \.quickSearchState, action: \.quickSearch)
-            ) { keyword in
-                store.send(.setNavigation(nil))
-                store.send(.setKeyword(keyword))
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    store.send(.setNavigation(.search))
+            WithPerceptionTracking {
+                QuickSearchView(
+                    store: store.scope(state: \.quickSearchState, action: \.quickSearch)
+                ) { keyword in
+                    store.send(.setNavigation(nil))
+                    store.send(.setKeyword(keyword))
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        store.send(.setNavigation(.search))
+                    }
                 }
+                .accentColor(setting.accentColor)
+                .autoBlur(radius: blurRadius)
             }
-            .accentColor(setting.accentColor)
-            .autoBlur(radius: blurRadius)
         }
         .searchable(text: $store.keyword)
         .searchSuggestions {
-            TagSuggestionView(
-                keyword: $store.keyword, translations: tagTranslator.translations,
-                showsImages: setting.showsImagesInTags, isEnabled: setting.showsTagsSearchSuggestion
-            )
+            WithPerceptionTracking {
+                TagSuggestionView(
+                    keyword: $store.keyword, translations: tagTranslator.translations,
+                    showsImages: setting.showsImagesInTags, isEnabled: setting.showsTagsSearchSuggestion
+                )
+            }
         }
         .onSubmit(of: .search) {
             store.send(.setNavigation(.search))
@@ -76,30 +82,36 @@ struct SearchRootView: View {
     }
 
     var body: some View {
-        NavigationView {
-            if DeviceUtil.isPad {
-                searchContent
-                    .sheet(item: $store.route.sending(\.setNavigation).detail, id: \.self) { gid in
-                        NavigationView {
-                            DetailView(
-                                store: store.scope(state: \.detailState.wrappedValue!, action: \.detail),
-                                gid: gid,
-                                user: user,
-                                setting: $setting,
-                                blurRadius: blurRadius,
-                                tagTranslator: tagTranslator
-                            )
+        WithPerceptionTracking {
+            NavigationView {
+                if DeviceUtil.isPad {
+                    searchContent
+                        .sheet(item: $store.route.sending(\.setNavigation).detail, id: \.self) { gid in
+                            WithPerceptionTracking {
+                                NavigationView {
+                                    DetailView(
+                                        store: store.scope(state: \.detailState.wrappedValue!, action: \.detail),
+                                        gid: gid,
+                                        user: user,
+                                        setting: $setting,
+                                        blurRadius: blurRadius,
+                                        tagTranslator: tagTranslator
+                                    )
+                                }
+                                .autoBlur(radius: blurRadius).environment(\.inSheet, true).navigationViewStyle(.stack)
+                            }
                         }
-                        .autoBlur(radius: blurRadius).environment(\.inSheet, true).navigationViewStyle(.stack)
-                    }
-            } else {
-                // Workaround: Prevent the title disappearing issue.
-                searchContent
-                    .overlay {
-                        if store.historyKeywords.isEmpty && store.historyGalleries.isEmpty {
-                            Text(" ").opacity(0)
+                } else {
+                    // Workaround: Prevent the title disappearing issue.
+                    searchContent
+                        .overlay {
+                            WithPerceptionTracking {
+                                if store.historyKeywords.isEmpty && store.historyGalleries.isEmpty {
+                                    Text(" ").opacity(0)
+                                }
+                            }
                         }
-                    }
+                }
             }
         }
     }
@@ -127,20 +139,24 @@ private extension SearchRootView {
     }
     var detailViewLink: some View {
         NavigationLink(unwrapping: $store.route, case: \.detail) { route in
-            DetailView(
-                store: store.scope(state: \.detailState.wrappedValue!, action: \.detail),
-                gid: route.wrappedValue, user: user, setting: $setting,
-                blurRadius: blurRadius, tagTranslator: tagTranslator
-            )
+            WithPerceptionTracking {
+                DetailView(
+                    store: store.scope(state: \.detailState.wrappedValue!, action: \.detail),
+                    gid: route.wrappedValue, user: user, setting: $setting,
+                    blurRadius: blurRadius, tagTranslator: tagTranslator
+                )
+            }
         }
     }
     var searchViewLink: some View {
         NavigationLink(unwrapping: $store.route, case: \.search) { _ in
-            SearchView(
-                store: store.scope(state: \.searchState, action: \.search),
-                keyword: store.keyword, user: user, setting: $setting,
-                blurRadius: blurRadius, tagTranslator: tagTranslator
-            )
+            WithPerceptionTracking {
+                SearchView(
+                    store: store.scope(state: \.searchState, action: \.search),
+                    keyword: store.keyword, user: user, setting: $setting,
+                    blurRadius: blurRadius, tagTranslator: tagTranslator
+                )
+            }
         }
     }
 }

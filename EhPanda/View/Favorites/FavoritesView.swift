@@ -31,72 +31,80 @@ struct FavoritesView: View {
     }
 
     var body: some View {
-        NavigationView {
-            let content =
-            ZStack {
-                if CookieUtil.didLogin {
-                    GenericList(
-                        galleries: store.galleries ?? [],
-                        setting: setting,
-                        pageNumber: store.pageNumber,
-                        loadingState: store.loadingState ?? .idle,
-                        footerLoadingState: store.footerLoadingState ?? .idle,
-                        fetchAction: { store.send(.fetchGalleries()) },
-                        fetchMoreAction: { store.send(.fetchMoreGalleries) },
-                        navigateAction: { store.send(.setNavigation(.detail($0))) },
-                        translateAction: {
-                            tagTranslator.lookup(word: $0, returnOriginal: !setting.translatesTags)
-                        }
-                    )
-                } else {
-                    NotLoginView(action: { store.send(.onNotLoginViewButtonTapped) })
-                }
-            }
-            .sheet(item: $store.route.sending(\.setNavigation).quickSearch) { _ in
-                QuickSearchView(
-                    store: store.scope(state: \.quickSearchState, action: \.quickSearch)
-                ) { keyword in
-                    store.send(.setNavigation(nil))
-                    store.send(.fetchGalleries(keyword))
-                }
-                .accentColor(setting.accentColor)
-                .autoBlur(radius: blurRadius)
-            }
-            .searchable(text: $store.keyword)
-            .searchSuggestions {
-                TagSuggestionView(
-                    keyword: $store.keyword, translations: tagTranslator.translations,
-                    showsImages: setting.showsImagesInTags, isEnabled: setting.showsTagsSearchSuggestion
-                )
-            }
-            .onSubmit(of: .search) {
-                store.send(.fetchGalleries())
-            }
-            .onAppear {
-                if store.galleries?.isEmpty != false && CookieUtil.didLogin {
-                    DispatchQueue.main.async {
-                        store.send(.fetchGalleries())
+        WithPerceptionTracking {
+            NavigationView {
+                let content =
+                ZStack {
+                    if CookieUtil.didLogin {
+                        GenericList(
+                            galleries: store.galleries ?? [],
+                            setting: setting,
+                            pageNumber: store.pageNumber,
+                            loadingState: store.loadingState ?? .idle,
+                            footerLoadingState: store.footerLoadingState ?? .idle,
+                            fetchAction: { store.send(.fetchGalleries()) },
+                            fetchMoreAction: { store.send(.fetchMoreGalleries) },
+                            navigateAction: { store.send(.setNavigation(.detail($0))) },
+                            translateAction: {
+                                tagTranslator.lookup(word: $0, returnOriginal: !setting.translatesTags)
+                            }
+                        )
+                    } else {
+                        NotLoginView(action: { store.send(.onNotLoginViewButtonTapped) })
                     }
                 }
-            }
-            .background(navigationLink)
-            .toolbar(content: toolbar)
-            .navigationTitle(navigationTitle)
+                .sheet(item: $store.route.sending(\.setNavigation).quickSearch) { _ in
+                    WithPerceptionTracking {
+                        QuickSearchView(
+                            store: store.scope(state: \.quickSearchState, action: \.quickSearch)
+                        ) { keyword in
+                            store.send(.setNavigation(nil))
+                            store.send(.fetchGalleries(keyword))
+                        }
+                        .accentColor(setting.accentColor)
+                        .autoBlur(radius: blurRadius)
+                    }
+                }
+                .searchable(text: $store.keyword)
+                .searchSuggestions {
+                    WithPerceptionTracking {
+                        TagSuggestionView(
+                            keyword: $store.keyword, translations: tagTranslator.translations,
+                            showsImages: setting.showsImagesInTags, isEnabled: setting.showsTagsSearchSuggestion
+                        )
+                    }
+                }
+                .onSubmit(of: .search) {
+                    store.send(.fetchGalleries())
+                }
+                .onAppear {
+                    if store.galleries?.isEmpty != false && CookieUtil.didLogin {
+                        DispatchQueue.main.async {
+                            store.send(.fetchGalleries())
+                        }
+                    }
+                }
+                .background(navigationLink)
+                .toolbar(content: toolbar)
+                .navigationTitle(navigationTitle)
 
-            if DeviceUtil.isPad {
-                content
-                    .sheet(item: $store.route.sending(\.setNavigation).detail, id: \.self) { route in
-                        NavigationView {
-                            DetailView(
-                                store: store.scope(state: \.detailState.wrappedValue!, action: \.detail),
-                                gid: route.wrappedValue, user: user, setting: $setting,
-                                blurRadius: blurRadius, tagTranslator: tagTranslator
-                            )
+                if DeviceUtil.isPad {
+                    content
+                        .sheet(item: $store.route.sending(\.setNavigation).detail, id: \.self) { route in
+                            WithPerceptionTracking {
+                                NavigationView {
+                                    DetailView(
+                                        store: store.scope(state: \.detailState.wrappedValue!, action: \.detail),
+                                        gid: route.wrappedValue, user: user, setting: $setting,
+                                        blurRadius: blurRadius, tagTranslator: tagTranslator
+                                    )
+                                }
+                                .autoBlur(radius: blurRadius).environment(\.inSheet, true).navigationViewStyle(.stack)
+                            }
                         }
-                        .autoBlur(radius: blurRadius).environment(\.inSheet, true).navigationViewStyle(.stack)
-                    }
-            } else {
-                content
+                } else {
+                    content
+                }
             }
         }
     }
@@ -104,11 +112,13 @@ struct FavoritesView: View {
     @ViewBuilder private var navigationLink: some View {
         if DeviceUtil.isPhone {
             NavigationLink(unwrapping: $store.route, case: \.detail) { route in
-                DetailView(
-                    store: store.scope(state: \.detailState.wrappedValue!, action: \.detail),
-                    gid: route.wrappedValue, user: user, setting: $setting,
-                    blurRadius: blurRadius, tagTranslator: tagTranslator
-                )
+                WithPerceptionTracking {
+                    DetailView(
+                        store: store.scope(state: \.detailState.wrappedValue!, action: \.detail),
+                        gid: route.wrappedValue, user: user, setting: $setting,
+                        blurRadius: blurRadius, tagTranslator: tagTranslator
+                    )
+                }
             }
         }
     }

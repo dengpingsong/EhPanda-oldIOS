@@ -18,78 +18,82 @@ struct QuickSearchView: View {
     }
 
     var body: some View {
-        NavigationView {
-            ZStack {
-                List {
-                    ForEach(store.quickSearchWords) { word in
-                        Button {
-                            searchAction(word.content)
-                        } label: {
-                            VStack(alignment: .leading, spacing: 5) {
-                                if !word.name.isEmpty {
-                                    Text(word.name).font(.subheadline).foregroundColor(.secondary).lineLimit(1)
+        WithPerceptionTracking {
+            NavigationView {
+                ZStack {
+                    List {
+                        ForEach(store.quickSearchWords) { word in
+                            WithPerceptionTracking {
+                                Button {
+                                    searchAction(word.content)
+                                } label: {
+                                    VStack(alignment: .leading, spacing: 5) {
+                                        if !word.name.isEmpty {
+                                            Text(word.name).font(.subheadline).foregroundColor(.secondary).lineLimit(1)
+                                        }
+                                        Text(word.content).fontWeight(.medium).font(.title3).lineLimit(2)
+                                    }
+                                    .tint(.primary)
                                 }
-                                Text(word.content).fontWeight(.medium).font(.title3).lineLimit(2)
-                            }
-                            .tint(.primary)
-                        }
-                        .swipeActions(edge: .trailing) {
-                            Button {
-                                store.send(.setNavigation(.deleteWord(word)))
-                            } label: {
-                                Image(systemSymbol: .trash)
-                            }
-                            .tint(.red)
-                            Button {
-                                store.send(.setEditingWord(word))
-                                store.send(.setNavigation(.editWord))
-                            } label: {
-                                Image(systemSymbol: .squareAndPencil)
-                            }
-                        }
-                        .withArrow(isVisible: !store.isListEditing).padding(5)
-                        .confirmationDialog(
-                            message: L10n.Localizable.ConfirmationDialog.Title.delete,
-                            unwrapping: $store.route,
-                            case: \.deleteWord,
-                            matching: word
-                        ) { route in
-                            Button(L10n.Localizable.ConfirmationDialog.Button.delete, role: .destructive) {
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                    store.send(.deleteWord(route))
+                                .swipeActions(edge: .trailing) {
+                                    Button {
+                                        store.send(.setNavigation(.deleteWord(word)))
+                                    } label: {
+                                        Image(systemSymbol: .trash)
+                                    }
+                                    .tint(.red)
+                                    Button {
+                                        store.send(.setEditingWord(word))
+                                        store.send(.setNavigation(.editWord))
+                                    } label: {
+                                        Image(systemSymbol: .squareAndPencil)
+                                    }
+                                }
+                                .withArrow(isVisible: !store.isListEditing).padding(5)
+                                .confirmationDialog(
+                                    message: L10n.Localizable.ConfirmationDialog.Title.delete,
+                                    unwrapping: $store.route,
+                                    case: \.deleteWord,
+                                    matching: word
+                                ) { route in
+                                    Button(L10n.Localizable.ConfirmationDialog.Button.delete, role: .destructive) {
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                            store.send(.deleteWord(route))
+                                        }
+                                    }
                                 }
                             }
+                        }
+                        .onDelete { offsets in
+                            store.send(.deleteWordWithOffsets(offsets))
+                        }
+                        .onMove { source, destination in
+                            store.send(.moveWord(source, destination))
                         }
                     }
-                    .onDelete { offsets in
-                        store.send(.deleteWordWithOffsets(offsets))
-                    }
-                    .onMove { source, destination in
-                        store.send(.moveWord(source, destination))
+                    LoadingView().opacity(
+                        store.loadingState == .loading
+                        && store.quickSearchWords.isEmpty ? 1 : 0
+                    )
+                    ErrorView(error: .notFound)
+                    .opacity(
+                        store.loadingState != .loading
+                        && store.quickSearchWords.isEmpty ? 1 : 0
+                    )
+                }
+                .synchronize($store.focusedField, $focusedField)
+                .environment(\.editMode, $store.listEditMode)
+                .animation(.default, value: store.quickSearchWords)
+                .animation(.default, value: store.listEditMode)
+                .onAppear {
+                    if store.quickSearchWords.isEmpty {
+                        store.send(.fetchQuickSearchWords)
                     }
                 }
-                LoadingView().opacity(
-                    store.loadingState == .loading
-                    && store.quickSearchWords.isEmpty ? 1 : 0
-                )
-                ErrorView(error: .notFound)
-                .opacity(
-                    store.loadingState != .loading
-                    && store.quickSearchWords.isEmpty ? 1 : 0
-                )
+                .toolbar(content: toolbar)
+                .background(navigationLinks)
+                .navigationTitle(L10n.Localizable.QuickSearchView.Title.quickSearch)
             }
-            .synchronize($store.focusedField, $focusedField)
-            .environment(\.editMode, $store.listEditMode)
-            .animation(.default, value: store.quickSearchWords)
-            .animation(.default, value: store.listEditMode)
-            .onAppear {
-                if store.quickSearchWords.isEmpty {
-                    store.send(.fetchQuickSearchWords)
-                }
-            }
-            .toolbar(content: toolbar)
-            .background(navigationLinks)
-            .navigationTitle(L10n.Localizable.QuickSearchView.Title.quickSearch)
         }
     }
 
@@ -110,38 +114,39 @@ struct QuickSearchView: View {
             } label: {
                 Image(systemSymbol: .plus)
             }
-            Button {
-                store.send(.toggleListEditing)
-            } label: {
-                Image(systemSymbol: .pencilCircle)
-                    .symbolVariant(store.isListEditing ? .fill : .none)
-            }
         }
     }
-    @ViewBuilder private var navigationLinks: some View {
+}
+
+private extension QuickSearchView {
+    @ViewBuilder var navigationLinks: some View {
         NavigationLink(unwrapping: $store.route, case: \.newWord) { _ in
-            EditWordView(
-                title: L10n.Localizable.QuickSearchView.Title.newWord,
-                word: $store.editingWord,
-                focusedField: $focusedField,
-                submitAction: onTextFieldSubmitted,
-                confirmAction: {
-                    store.send(.appendWord)
-                    store.send(.setNavigation(nil))
-                }
-            )
+            WithPerceptionTracking {
+                EditWordView(
+                    title: L10n.Localizable.QuickSearchView.Title.newWord,
+                    word: $store.editingWord,
+                    focusedField: $focusedField,
+                    submitAction: onTextFieldSubmitted,
+                    confirmAction: {
+                        store.send(.appendWord)
+                        store.send(.setNavigation(nil))
+                    }
+                )
+            }
         }
         NavigationLink(unwrapping: $store.route, case: \.editWord) { _ in
-            EditWordView(
-                title: L10n.Localizable.QuickSearchView.Title.editWord,
-                word: $store.editingWord,
-                focusedField: $focusedField,
-                submitAction: onTextFieldSubmitted,
-                confirmAction: {
-                    store.send(.editWord)
-                    store.send(.setNavigation(nil))
-                }
-            )
+            WithPerceptionTracking {
+                EditWordView(
+                    title: L10n.Localizable.QuickSearchView.Title.editWord,
+                    word: $store.editingWord,
+                    focusedField: $focusedField,
+                    submitAction: onTextFieldSubmitted,
+                    confirmAction: {
+                        store.send(.editWord)
+                        store.send(.setNavigation(nil))
+                    }
+                )
+            }
         }
     }
 }
