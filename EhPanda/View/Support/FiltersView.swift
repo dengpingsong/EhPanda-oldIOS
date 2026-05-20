@@ -28,22 +28,24 @@ struct FiltersView: View {
 
     // MARK: FilterView
     var body: some View {
-        NavigationView {
-            Form {
-                BasicSection(
-                    route: $store.route,
-                    filter: filter, filterRange: $store.filterRange,
-                    resetFiltersAction: { store.send(.resetFilters) },
-                    resetFiltersDialogAction: { store.send(.setNavigation(.resetFilters)) }
-                )
-                AdvancedSection(
-                    filter: filter, focusedBound: $focusedBound,
-                    submitAction: { store.send(.onTextFieldSubmitted) }
-                )
+        WithPerceptionTracking {
+            NavigationView {
+                Form {
+                    BasicSection(
+                        route: $store.route,
+                        filter: filter, filterRange: $store.filterRange,
+                        resetFiltersAction: { store.send(.resetFilters) },
+                        resetFiltersDialogAction: { store.send(.setNavigation(.resetFilters)) }
+                    )
+                    AdvancedSection(
+                        filter: filter, focusedBound: $focusedBound,
+                        submitAction: { store.send(.onTextFieldSubmitted) }
+                    )
+                }
+                .synchronize($store.focusedBound, $focusedBound)
+                .navigationTitle(L10n.Localizable.FiltersView.Title.filters)
+                .onAppear { store.send(.fetchFilters) }
             }
-            .synchronize($store.focusedBound, $focusedBound)
-            .navigationTitle(L10n.Localizable.FiltersView.Title.filters)
-            .onAppear { store.send(.fetchFilters) }
         }
     }
 }
