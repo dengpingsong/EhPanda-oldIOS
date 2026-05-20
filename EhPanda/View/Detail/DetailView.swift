@@ -9,7 +9,7 @@ import ComposableArchitecture
 import CommonMark
 
 struct DetailView: View {
-    @Bindable private var store: StoreOf<DetailReducer>
+    @Perception.Bindable private var store: StoreOf<DetailReducer>
     private let gid: String
     private let user: User
     @Binding private var setting: Setting
@@ -380,7 +380,7 @@ private struct HeaderSection: View {
                     }
                     .imageScale(.large)
                     .foregroundStyle(.tint)
-                    .buttonStyle(.glass(.regular.interactive()))
+                    .buttonStyle(.bordered)
                     .disabled(!CookieUtil.didLogin)
 
                     Button(action: navigateReadingAction) {
@@ -389,7 +389,7 @@ private struct HeaderSection: View {
                             .foregroundColor(.white).padding(.vertical, -2)
                             .padding(.horizontal, 2).lineLimit(1)
                     }
-                    .buttonStyle(.glassProminent)
+                    .buttonStyle(.borderedProminent)
                     .buttonBorderShape(.capsule)
                 }
                 .minimumScaleFactor(0.5)
@@ -886,7 +886,6 @@ private struct CommentButton: View {
             .background(backgroundColor)
             .clipShape(shape)
         }
-        .glassEffect(.clear.interactive(), in: shape)
     }
 }
 

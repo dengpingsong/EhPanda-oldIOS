@@ -40,11 +40,15 @@ extension View {
         initial: (first: Bool, second: Bool) = (false, false)
     ) -> some View {
         self
-            .onChange(of: first.wrappedValue, initial: initial.first) { _, newValue in
+            .onChange(of: first.wrappedValue) { newValue in
                 second.wrappedValue = newValue
             }
-            .onChange(of: second.wrappedValue, initial: initial.second) { _, newValue in
+            .onChange(of: second.wrappedValue) { newValue in
                 first.wrappedValue = newValue
+            }
+            .onAppear {
+                if initial.first { second.wrappedValue = first.wrappedValue }
+                if initial.second { first.wrappedValue = second.wrappedValue }
             }
     }
 
@@ -54,11 +58,15 @@ extension View {
         initial: (first: Bool, second: Bool) = (false, false)
     ) -> some View {
         self
-            .onChange(of: first.wrappedValue, initial: initial.first) { _, newValue in
+            .onChange(of: first.wrappedValue) { newValue in
                 second.wrappedValue = newValue
             }
-            .onChange(of: second.wrappedValue, initial: initial.second) { _, newValue in
+            .onChange(of: second.wrappedValue) { newValue in
                 first.wrappedValue = newValue
+            }
+            .onAppear {
+                if initial.first { second.wrappedValue = first.wrappedValue }
+                if initial.second { first.wrappedValue = second.wrappedValue }
             }
     }
 }
@@ -183,3 +191,4 @@ struct PreviewResolver {
         return (plainURL, RoundedOffsetModifier(size: size, offset: offset))
     }
 }
+

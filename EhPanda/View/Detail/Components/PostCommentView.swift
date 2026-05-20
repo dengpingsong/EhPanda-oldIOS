@@ -42,10 +42,14 @@ struct PostCommentView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(role: .close, action: cancelAction)
+                    Button(action: cancelAction) {
+                        Text("Cancel")
+                    }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(role: .confirm, action: postAction)
+                    Button(action: postAction) {
+                        Text("Post")
+                    }
                         .disabled(content.isEmpty)
                 }
             }

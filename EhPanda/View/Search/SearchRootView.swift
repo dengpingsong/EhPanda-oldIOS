@@ -7,7 +7,7 @@ import SwiftUI
 import ComposableArchitecture
 
 struct SearchRootView: View {
-    @Bindable private var store: StoreOf<SearchRootReducer>
+    @Perception.Bindable private var store: StoreOf<SearchRootReducer>
     private let user: User
     @Binding private var setting: Setting
     private let blurRadius: Double
@@ -24,60 +24,61 @@ struct SearchRootView: View {
         self.tagTranslator = tagTranslator
     }
 
+    private var searchContent: some View {
+        ScrollView(showsIndicators: false) {
+            SuggestionsPanel(
+                historyKeywords: store.historyKeywords.reversed(),
+                historyGalleries: store.historyGalleries,
+                quickSearchWords: store.quickSearchWords,
+                navigateGalleryAction: { store.send(.setNavigation(.detail($0))) },
+                navigateQuickSearchAction: { store.send(.setNavigation(.quickSearch())) },
+                searchKeywordAction: { keyword in
+                    store.send(.setKeyword(keyword))
+                    store.send(.setNavigation(.search))
+                },
+                removeKeywordAction: { store.send(.removeHistoryKeyword($0)) }
+            )
+        }
+        .sheet(item: $store.route.sending(\.setNavigation).filters) { _ in
+            FiltersView(store: store.scope(state: \.filtersState, action: \.filters))
+                .autoBlur(radius: blurRadius).environment(\.inSheet, true)
+        }
+        .sheet(item: $store.route.sending(\.setNavigation).quickSearch) { _ in
+            QuickSearchView(
+                store: store.scope(state: \.quickSearchState, action: \.quickSearch)
+            ) { keyword in
+                store.send(.setNavigation(nil))
+                store.send(.setKeyword(keyword))
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    store.send(.setNavigation(.search))
+                }
+            }
+            .accentColor(setting.accentColor)
+            .autoBlur(radius: blurRadius)
+        }
+        .searchable(text: $store.keyword)
+        .searchSuggestions {
+            TagSuggestionView(
+                keyword: $store.keyword, translations: tagTranslator.translations,
+                showsImages: setting.showsImagesInTags, isEnabled: setting.showsTagsSearchSuggestion
+            )
+        }
+        .onSubmit(of: .search) {
+            store.send(.setNavigation(.search))
+        }
+        .onAppear {
+            store.send(.fetchHistoryGalleries)
+            store.send(.fetchDatabaseInfos)
+        }
+        .background(navigationLinks)
+        .toolbar(content: toolbar)
+        .navigationTitle(L10n.Localizable.SearchView.Title.search)
+    }
+
     var body: some View {
         NavigationView {
-            let content =
-            ScrollView(showsIndicators: false) {
-                SuggestionsPanel(
-                    historyKeywords: store.historyKeywords.reversed(),
-                    historyGalleries: store.historyGalleries,
-                    quickSearchWords: store.quickSearchWords,
-                    navigateGalleryAction: { store.send(.setNavigation(.detail($0))) },
-                    navigateQuickSearchAction: { store.send(.setNavigation(.quickSearch())) },
-                    searchKeywordAction: { keyword in
-                        store.send(.setKeyword(keyword))
-                        store.send(.setNavigation(.search))
-                    },
-                    removeKeywordAction: { store.send(.removeHistoryKeyword($0)) }
-                )
-            }
-            .sheet(item: $store.route.sending(\.setNavigation).filters) { _ in
-                FiltersView(store: store.scope(state: \.filtersState, action: \.filters))
-                    .autoBlur(radius: blurRadius).environment(\.inSheet, true)
-            }
-            .sheet(item: $store.route.sending(\.setNavigation).quickSearch) { _ in
-                QuickSearchView(
-                    store: store.scope(state: \.quickSearchState, action: \.quickSearch)
-                ) { keyword in
-                    store.send(.setNavigation(nil))
-                    store.send(.setKeyword(keyword))
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        store.send(.setNavigation(.search))
-                    }
-                }
-                .accentColor(setting.accentColor)
-                .autoBlur(radius: blurRadius)
-            }
-            .searchable(text: $store.keyword)
-            .searchSuggestions {
-                TagSuggestionView(
-                    keyword: $store.keyword, translations: tagTranslator.translations,
-                    showsImages: setting.showsImagesInTags, isEnabled: setting.showsTagsSearchSuggestion
-                )
-            }
-            .onSubmit(of: .search) {
-                store.send(.setNavigation(.search))
-            }
-            .onAppear {
-                store.send(.fetchHistoryGalleries)
-                store.send(.fetchDatabaseInfos)
-            }
-            .background(navigationLinks)
-            .toolbar(content: toolbar)
-            .navigationTitle(L10n.Localizable.SearchView.Title.search)
-
             if DeviceUtil.isPad {
-                content
+                searchContent
                     .sheet(item: $store.route.sending(\.setNavigation).detail, id: \.self) { gid in
                         NavigationView {
                             DetailView(
@@ -93,12 +94,12 @@ struct SearchRootView: View {
                     }
             } else {
                 // Workaround: Prevent the title disappearing issue.
-                if store.historyKeywords.isEmpty && store.historyGalleries.isEmpty {
-                    content
-                        .navigationSubtitle(Text(" "))
-                } else {
-                    content
-                }
+                searchContent
+                    .overlay {
+                        if store.historyKeywords.isEmpty && store.historyGalleries.isEmpty {
+                            Text(" ").opacity(0)
+                        }
+                    }
             }
         }
     }

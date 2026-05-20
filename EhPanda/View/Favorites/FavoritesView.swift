@@ -8,7 +8,7 @@ import AlertKit
 import ComposableArchitecture
 
 struct FavoritesView: View {
-    @Bindable private var store: StoreOf<FavoritesReducer>
+    @Perception.Bindable private var store: StoreOf<FavoritesReducer>
     private let user: User
     @Binding private var setting: Setting
     private let blurRadius: Double

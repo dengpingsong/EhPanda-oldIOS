@@ -7,7 +7,7 @@ import SwiftUI
 import ComposableArchitecture
 
 struct TorrentsView: View {
-    @Bindable private var store: StoreOf<TorrentsReducer>
+    @Perception.Bindable private var store: StoreOf<TorrentsReducer>
     private let gid: String
     private let token: String
     private let blurRadius: Double

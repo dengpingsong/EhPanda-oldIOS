@@ -7,7 +7,7 @@ import SwiftUI
 import ComposableArchitecture
 
 struct LoginView: View {
-    @Bindable private var store: StoreOf<LoginReducer>
+    @Perception.Bindable private var store: StoreOf<LoginReducer>
     private let bypassesSNIFiltering: Bool
     private let blurRadius: Double
 
@@ -62,7 +62,6 @@ struct LoginView: View {
                     .font(.title)
                     .foregroundStyle(store.loginButtonColor)
                     .disabled(store.loginButtonDisabled)
-                    .glassEffect(.regular.interactive(), in: .circle)
                     .clipShape(.circle)
                     .padding(.top, 30)
                 }
@@ -141,7 +140,6 @@ private struct LoginTextField: View {
             .disableAutocorrection(true)
             .keyboardType(isPassword ? .asciiCapable : .default)
             .padding(10)
-            .glassEffect(.regular.tint(Color(.systemGray5)), in: .rect(cornerRadius: 8))
         }
     }
 }

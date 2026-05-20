@@ -11,7 +11,7 @@ import ComposableArchitecture
 struct ReadingView: View {
     @Environment(\.colorScheme) private var colorScheme
 
-    @Bindable var store: StoreOf<ReadingReducer>
+    @Perception.Bindable var store: StoreOf<ReadingReducer>
     private let gid: String
     @Binding private var setting: Setting
     private let blurRadius: Double
@@ -148,9 +148,18 @@ struct ReadingView: View {
 
     @ViewBuilder
     private func changeTriggers<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        content()
-             // Page
-            .onChange(of: page.index) { _, newValue in
+        orientationTrigger(
+            liveTextTriggers(
+                autoPlayTrigger(
+                    pageTriggers(content())
+                )
+            )
+        )
+    }
+
+    private func pageTriggers<C: View>(_ content: C) -> some View {
+        content
+            .onChange(of: page.index, perform: { newValue in
                 Logger.info("page.index changed", context: ["pageIndex": newValue])
                 let newValue = pageHandler.mapFromPager(
                     index: newValue, pageCount: store.gallery.pageCount, setting: setting
@@ -159,50 +168,56 @@ struct ReadingView: View {
                 if store.databaseLoadingState == .idle {
                     store.send(.syncReadingProgress(.init(newValue)))
                 }
-            }
-            .onChange(of: pageHandler.sliderValue) { _, newValue in
+            })
+            .onChange(of: pageHandler.sliderValue, perform: { newValue in
                 Logger.info("pageHandler.sliderValue changed", context: ["sliderValue": newValue])
                 if !store.showsSliderPreview {
                     setPageIndex(sliderValue: newValue)
                 }
-            }
-            .onChange(of: store.showsSliderPreview) { _, newValue in
+            })
+            .onChange(of: store.showsSliderPreview, perform: { newValue in
                 Logger.info("store.showsSliderPreview changed", context: ["isShown": newValue])
                 if !newValue { setPageIndex(sliderValue: pageHandler.sliderValue) }
                 setAutoPlayPolocy(.off)
-            }
-            .onChange(of: store.readingProgress) { _, newValue in
+            })
+            .onChange(of: store.readingProgress, perform: { newValue in
                 Logger.info("store.readingProgress changed", context: ["readingProgress": newValue])
                 pageHandler.sliderValue = .init(newValue)
-            }
+            })
+    }
 
-            // AutoPlay
-            .onChange(of: store.route) { _, newValue in
+    private func autoPlayTrigger<C: View>(_ content: C) -> some View {
+        content
+            .onChange(of: store.route, perform: { newValue in
                 Logger.info("store.route changed", context: ["route": newValue])
                 if ![.hud, .none].contains(newValue) {
                     setAutoPlayPolocy(.off)
                 }
-            }
+            })
+    }
 
-            // LiveText
-            .onChange(of: liveTextHandler.enablesLiveText) { _, newValue in
+    private func liveTextTriggers<C: View>(_ content: C) -> some View {
+        content
+            .onChange(of: liveTextHandler.enablesLiveText, perform: { newValue in
                 Logger.info("liveTextHandler.enablesLiveText changed", context: ["isEnabled": newValue])
                 if newValue { store.webImageLoadSuccessIndices.forEach(analyzeImageForLiveText) }
-            }
-            .onChange(of: store.webImageLoadSuccessIndices) { _, newValue in
+            })
+            .onChange(of: store.webImageLoadSuccessIndices, perform: { newValue in
                 Logger.info("store.webImageLoadSuccessIndices changed", context: [
                     "count": store.webImageLoadSuccessIndices.count
                 ])
                 if liveTextHandler.enablesLiveText {
                     newValue.forEach(analyzeImageForLiveText)
                 }
-            }
+            })
+    }
 
-            // Orientation
-            .onChange(of: setting.enablesLandscape) { _, newValue in
+    private func orientationTrigger<C: View>(_ content: C) -> some View {
+        content
+            .onChange(of: setting.enablesLandscape, perform: { newValue in
                 Logger.info("setting.enablesLandscape changed", context: ["newValue": newValue])
                 store.send(.setOrientationPortrait(!newValue))
-            }
+            })
     }
 
     @ViewBuilder private func imageStack(index: Int) -> some View {

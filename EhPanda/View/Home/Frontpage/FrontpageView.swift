@@ -8,7 +8,7 @@ import AlertKit
 import ComposableArchitecture
 
 struct FrontpageView: View {
-    @Bindable private var store: StoreOf<FrontpageReducer>
+    @Perception.Bindable private var store: StoreOf<FrontpageReducer>
     private let user: User
     @Binding private var setting: Setting
     private let blurRadius: Double

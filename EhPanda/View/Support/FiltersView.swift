@@ -7,7 +7,7 @@ import SwiftUI
 import ComposableArchitecture
 
 struct FiltersView: View {
-    @Bindable private var store: StoreOf<FiltersReducer>
+    @Perception.Bindable private var store: StoreOf<FiltersReducer>
 
     @FocusState private var focusedBound: FiltersReducer.FocusedBound?
 

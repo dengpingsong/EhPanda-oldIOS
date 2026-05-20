@@ -8,7 +8,7 @@ import ComposableArchitecture
 
 struct MigrationView: View {
     @Environment(\.colorScheme) private var colorScheme
-    @Bindable private var store: StoreOf<MigrationReducer>
+    @Perception.Bindable private var store: StoreOf<MigrationReducer>
 
     private var reversedPrimary: Color {
         colorScheme == .light ? .white : .black

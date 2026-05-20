@@ -7,7 +7,7 @@ import SwiftUI
 import ComposableArchitecture
 
 struct LogsView: View {
-    @Bindable private var store: StoreOf<LogsReducer>
+    @Perception.Bindable private var store: StoreOf<LogsReducer>
 
     init(store: StoreOf<LogsReducer>) {
         self.store = store

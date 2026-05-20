@@ -8,7 +8,7 @@ import FilePicker
 import ComposableArchitecture
 
 struct GeneralSettingView: View {
-    @Bindable private var store: StoreOf<GeneralSettingReducer>
+    @Perception.Bindable private var store: StoreOf<GeneralSettingReducer>
     private let tagTranslatorLoadingState: LoadingState
     private let tagTranslatorEmpty: Bool
     private let tagTranslatorHasCustomTranslations: Bool

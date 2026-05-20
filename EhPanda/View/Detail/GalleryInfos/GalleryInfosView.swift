@@ -7,7 +7,7 @@ import SwiftUI
 import ComposableArchitecture
 
 struct GalleryInfosView: View {
-    @Bindable private var store: StoreOf<GalleryInfosReducer>
+    @Perception.Bindable private var store: StoreOf<GalleryInfosReducer>
     private let gallery: Gallery
     private let galleryDetail: GalleryDetail
 

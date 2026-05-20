@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 60;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -317,6 +317,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		1844F2782FBD8F4A00B9FA58 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Constant.strings"; sourceTree = "<group>"; };
 		AB0929B5277F043D00F107CA /* AccountSettingReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountSettingReducer.swift; sourceTree = "<group>"; };
 		AB0929BD2780032400F107CA /* EhSettingReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EhSettingReducer.swift; sourceTree = "<group>"; };
 		AB0929BF27805A8200F107CA /* LoginReducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginReducer.swift; sourceTree = "<group>"; };
@@ -492,7 +493,6 @@
 		ABA732D825A8018A00B3D9AB /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		ABA732DE25A852D800B3D9AB /* Filter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Filter.swift; sourceTree = "<group>"; };
 		ABA9A6BB28EC786100EE28DE /* swiftgen.yml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.yaml; path = swiftgen.yml; sourceTree = SOURCE_ROOT; };
-		ABA9A6BE28EC7BA200EE28DE /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Constant.strings; sourceTree = "<group>"; };
 		ABA9A6C128EC7BD000EE28DE /* Strings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Strings.swift; sourceTree = "<group>"; };
 		ABAB5B9427EF023300198597 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		ABB5013026A41EBA00B542D9 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -1637,7 +1637,7 @@
 			};
 			buildConfigurationList = ABC3C74F2593696C00E0C11B /* Build configuration list for PBXProject "EhPanda" */;
 			compatibilityVersion = "Xcode 14.0";
-			developmentRegion = en;
+			developmentRegion = "zh-Hans";
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
@@ -1660,7 +1660,7 @@
 				AB17573B27675B1E00FD64E2 /* XCRemoteSwiftPackageReference "Colorful" */,
 				AB17573E27678B3400FD64E2 /* XCRemoteSwiftPackageReference "UIImageColors" */,
 				ABD49D5B277C6C9D003D1A07 /* XCRemoteSwiftPackageReference "SFSafeSymbols" */,
-				AB86AC0E27831AD100E61E6A /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
+				AB86AC0E27831AD100E61E6A /* XCLocalSwiftPackageReference "tca-fix" */,
 				ABBB2634278FB888007B6149 /* XCRemoteSwiftPackageReference "swift-navigation" */,
 				AB26F59727ACDB4200AB3468 /* XCRemoteSwiftPackageReference "FilePicker" */,
 				AB1FA94727C62BC80063EF55 /* XCRemoteSwiftPackageReference "SwiftCommonMark" */,
@@ -1668,6 +1668,8 @@
 				AB2EB9A0280251F600011A8A /* XCRemoteSwiftPackageReference "AlertKit" */,
 				AB2EB9A32802521700011A8A /* XCRemoteSwiftPackageReference "DeprecatedAPI" */,
 				EAE63E1F29E2A6330048C601 /* XCRemoteSwiftPackageReference "SwiftyBeaver" */,
+				1844F2792FBD938F00B9FA58 /* XCRemoteSwiftPackageReference "swift-algorithms" */,
+				1844F27A2FBDB07700B9FA58 /* XCLocalSwiftPackageReference "tca-fix" */,
 			);
 			productRefGroup = ABC3C7552593696C00E0C11B /* Products */;
 			projectDirPath = "";
@@ -2061,7 +2063,7 @@
 		ABA9A6BD28EC7BA200EE28DE /* Constant.strings */ = {
 			isa = PBXVariantGroup;
 			children = (
-				ABA9A6BE28EC7BA200EE28DE /* en */,
+				1844F2782FBD8F4A00B9FA58 /* zh-Hans */,
 			);
 			name = Constant.strings;
 			sourceTree = "<group>";
@@ -2088,23 +2090,23 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
-				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 157;
-				DEVELOPMENT_TEAM = 9SKQ7QTZ74;
+				DEVELOPMENT_TEAM = U25A7T7GPN;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ShareExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = ShareExtension;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.5;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = app.ehpanda.shareExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = app.selfehpanda.shareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = ShareExtension_Dev;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -2116,23 +2118,23 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
-				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 157;
-				DEVELOPMENT_TEAM = 9SKQ7QTZ74;
+				DEVELOPMENT_TEAM = U25A7T7GPN;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ShareExtension/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = ShareExtension;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.5;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = app.ehpanda.shareExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = app.selfehpanda.shareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = ShareExtension_Dev;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -2197,9 +2199,12 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_LDFLAGS = "";
+				OTHER_SWIFT_FLAGS = "$(inherited) -Xfrontend -warn-long-expression-type-checking=300";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
@@ -2253,9 +2258,12 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				OTHER_LDFLAGS = "";
+				OTHER_SWIFT_FLAGS = "$(inherited) -Xfrontend -warn-long-expression-type-checking=300";
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = minimal;
+				SWIFT_VERSION = 5.0;
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
@@ -2267,23 +2275,27 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = EhPanda/EhPanda.entitlements;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 157;
 				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = 9SKQ7QTZ74;
+				DEVELOPMENT_TEAM = U25A7T7GPN;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = EhPanda/App/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.5;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 16.5;
+				"MARKETING_VERSION[sdk=iphoneos*]" = 16.5;
 				OTHER_LDFLAGS = "";
-				PRODUCT_BUNDLE_IDENTIFIER = app.ehpanda;
+				OTHER_SWIFT_FLAGS = "$(inherited) -Xfrontend -warn-long-expression-type-checking=300";
+				PRODUCT_BUNDLE_IDENTIFIER = app.selfehpanda;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = App_Dev;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = minimal;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -2296,23 +2308,27 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = EhPanda/EhPanda.entitlements;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 157;
 				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = 9SKQ7QTZ74;
+				DEVELOPMENT_TEAM = U25A7T7GPN;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = EhPanda/App/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.5;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = 16.5;
+				"MARKETING_VERSION[sdk=iphoneos*]" = 16.5;
 				OTHER_LDFLAGS = "";
-				PRODUCT_BUNDLE_IDENTIFIER = app.ehpanda;
+				OTHER_SWIFT_FLAGS = "$(inherited) -Xfrontend -warn-long-expression-type-checking=300";
+				PRODUCT_BUNDLE_IDENTIFIER = app.selfehpanda;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = App_Dev;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = minimal;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -2413,7 +2429,22 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		1844F27A2FBDB07700B9FA58 /* XCLocalSwiftPackageReference "tca-fix" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "tca-fix";
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCRemoteSwiftPackageReference section */
+		1844F2792FBD938F00B9FA58 /* XCRemoteSwiftPackageReference "swift-algorithms" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-algorithms.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.2.1;
+			};
+		};
 		AB17573B27675B1E00FD64E2 /* XCRemoteSwiftPackageReference "Colorful" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/Co2333/Colorful";
@@ -2486,13 +2517,9 @@
 				minimumVersion = 2.0.0;
 			};
 		};
-		AB86AC0E27831AD100E61E6A /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.17.0;
-			};
+		AB86AC0E27831AD100E61E6A /* XCLocalSwiftPackageReference "tca-fix" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = tca-fix;
 		};
 		ABAC82FC26BC4866009F5026 /* XCRemoteSwiftPackageReference "SwiftyOpenCC" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -2592,7 +2619,7 @@
 		};
 		AB86AC0F27831AD100E61E6A /* ComposableArchitecture */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = AB86AC0E27831AD100E61E6A /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
+			package = AB86AC0E27831AD100E61E6A /* XCLocalSwiftPackageReference "tca-fix" */;
 			productName = ComposableArchitecture;
 		};
 		ABAC82FD26BC4A96009F5026 /* OpenCC */ = {

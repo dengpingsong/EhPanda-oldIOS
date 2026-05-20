@@ -10,7 +10,7 @@ import SFSafeSymbols
 import ComposableArchitecture
 
 struct HomeView: View {
-    @Bindable private var store: StoreOf<HomeReducer>
+    @Perception.Bindable private var store: StoreOf<HomeReducer>
     private let user: User
     @Binding private var setting: Setting
     private let blurRadius: Double

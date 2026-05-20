@@ -44,7 +44,7 @@ struct AboutView: View {
         }
         .navigationTitle(L10n.Localizable.AboutView.Title.ehPanda)
         .toolbar {
-            ToolbarItem(placement: .largeSubtitle) {
+            ToolbarItem(placement: .principal) {
                 VStack(alignment: .leading) {
                     Text(L10n.Constant.App.copyright)
                     Text(version)

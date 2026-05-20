@@ -7,7 +7,7 @@ import SwiftUI
 import ComposableArchitecture
 
 struct AccountSettingView: View {
-    @Bindable private var store: StoreOf<AccountSettingReducer>
+    @Perception.Bindable private var store: StoreOf<AccountSettingReducer>
     @Binding private var galleryHost: GalleryHost
     @Binding private var showsNewDawnGreeting: Bool
     private let bypassesSNIFiltering: Bool

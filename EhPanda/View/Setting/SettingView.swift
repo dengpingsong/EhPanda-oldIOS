@@ -8,7 +8,7 @@ import SFSafeSymbols
 import ComposableArchitecture
 
 struct SettingView: View {
-    @Bindable private var store: StoreOf<SettingReducer>
+    @Perception.Bindable private var store: StoreOf<SettingReducer>
     private let blurRadius: Double
 
     init(store: StoreOf<SettingReducer>, blurRadius: Double) {

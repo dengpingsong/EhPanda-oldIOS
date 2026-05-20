@@ -37,9 +37,13 @@ struct TagSuggestionView: View {
                     action: { translationHandler.autoComplete(suggestion: suggestion, keyword: &keyword) }
                 )
             }
-            .onChange(of: keyword) {
-                translationHandler.analyze(text: &keyword, translations: translations)
-            }
+            .onChange(of: keyword, perform: { newValue in
+                var text = newValue
+                translationHandler.analyze(text: &text, translations: translations)
+                if text != newValue {
+                    keyword = text
+                }
+            })
         }
     }
 }

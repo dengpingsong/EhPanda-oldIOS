@@ -7,7 +7,7 @@ import SwiftUI
 import ComposableArchitecture
 
 struct ToplistsView: View {
-    @Bindable private var store: StoreOf<ToplistsReducer>
+    @Perception.Bindable private var store: StoreOf<ToplistsReducer>
     private let user: User
     @Binding private var setting: Setting
     private let blurRadius: Double

@@ -7,7 +7,7 @@ import SwiftUI
 import ComposableArchitecture
 
 struct EhSettingView: View {
-    @Bindable private var store: StoreOf<EhSettingReducer>
+    @Perception.Bindable private var store: StoreOf<EhSettingReducer>
     private let bypassesSNIFiltering: Bool
     private let blurRadius: Double
 
@@ -195,9 +195,9 @@ private struct EhProfileSection: View {
                 }
             }
         }
-        .onChange(of: ehProfile) { _, newValue in
+        .onChange(of: ehProfile, perform: { newValue in
             performEhProfileAction(nil, nil, newValue.value)
-        }
+        })
 
         Section {
             SettingTextField(text: $editingProfileName, width: nil, alignment: .leading, background: .clear)

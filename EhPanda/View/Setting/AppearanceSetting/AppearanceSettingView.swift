@@ -7,7 +7,7 @@ import SwiftUI
 import ComposableArchitecture
 
 struct AppearanceSettingView: View {
-    @Bindable private var store: StoreOf<AppearanceSettingReducer>
+    @Perception.Bindable private var store: StoreOf<AppearanceSettingReducer>
 
     @Binding private var preferredColorScheme: PreferredColorScheme
     @Binding private var accentColor: Color

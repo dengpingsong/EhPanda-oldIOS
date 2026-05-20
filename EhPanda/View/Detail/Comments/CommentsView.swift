@@ -8,7 +8,7 @@ import Kingfisher
 import ComposableArchitecture
 
 struct CommentsView: View {
-    @Bindable private var store: StoreOf<CommentsReducer>
+    @Perception.Bindable private var store: StoreOf<CommentsReducer>
     private let gid: String
     private let token: String
     private let apiKey: String

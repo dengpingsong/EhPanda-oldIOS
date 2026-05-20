@@ -8,7 +8,7 @@ import Kingfisher
 import ComposableArchitecture
 
 struct PreviewsView: View {
-    @Bindable private var store: StoreOf<PreviewsReducer>
+    @Perception.Bindable private var store: StoreOf<PreviewsReducer>
     private let gid: String
     @Binding private var setting: Setting
     private let blurRadius: Double

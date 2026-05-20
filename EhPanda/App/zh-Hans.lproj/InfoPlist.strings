@@ -3,5 +3,5 @@
   EhPanda
 */
 
-"NSFaceIDUsageDescription" = "需要此权限以在解锁 App 时提供 Face ID 选项";
-"NSPhotoLibraryAddUsageDescription" = "需要此权限以保存图像到相册";
+"NSFaceIDUsageDescription" = "We need this permission to provide Face ID option while unlocking the App.";
+"NSPhotoLibraryAddUsageDescription" = "We need this permission to save images to your photo library.";

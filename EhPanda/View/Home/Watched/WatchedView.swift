@@ -7,7 +7,7 @@ import SwiftUI
 import ComposableArchitecture
 
 struct WatchedView: View {
-    @Bindable private var store: StoreOf<WatchedReducer>
+    @Perception.Bindable private var store: StoreOf<WatchedReducer>
     private let user: User
     @Binding private var setting: Setting
     private let blurRadius: Double

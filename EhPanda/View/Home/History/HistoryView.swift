@@ -7,7 +7,7 @@ import SwiftUI
 import ComposableArchitecture
 
 struct HistoryView: View {
-    @Bindable private var store: StoreOf<HistoryReducer>
+    @Perception.Bindable private var store: StoreOf<HistoryReducer>
     private let user: User
     @Binding private var setting: Setting
     private let blurRadius: Double

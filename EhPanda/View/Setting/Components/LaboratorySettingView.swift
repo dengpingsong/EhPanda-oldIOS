@@ -69,7 +69,6 @@ struct LaboratoryCell: View {
         .cornerRadius(15)
         .lineLimit(1)
         .animation(.default, value: isOn)
-        .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 15))
     }
 }
 

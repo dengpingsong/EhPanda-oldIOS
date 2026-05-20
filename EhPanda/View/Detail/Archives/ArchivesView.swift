@@ -7,7 +7,7 @@ import SwiftUI
 import ComposableArchitecture
 
 struct ArchivesView: View {
-    @Bindable private var store: StoreOf<ArchivesReducer>
+    @Perception.Bindable private var store: StoreOf<ArchivesReducer>
     private let gid: String
     private let user: User
     private let galleryURL: URL
@@ -185,7 +185,6 @@ private struct HathArchiveGrid: View {
             RoundedRectangle(cornerRadius: 10)
                 .stroke(borderColor, lineWidth: 1)
         )
-        .glassEffect(.clear.interactive(), in: .rect(cornerRadius: 10))
     }
 }
 
@@ -222,7 +221,6 @@ private struct DownloadButton: View {
             .background(backgroundColor)
             .animation(.default, value: backgroundColor)
             .clipShape(.rect(cornerRadius: 30))
-            .glassEffect(.regular.interactive())
             .padding(paddingInsets)
             .onTapGesture(perform: { if !isDisabled { action() }})
             .onLongPressGesture(

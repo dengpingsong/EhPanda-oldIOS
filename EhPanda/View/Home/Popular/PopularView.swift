@@ -7,7 +7,7 @@ import SwiftUI
 import ComposableArchitecture
 
 struct PopularView: View {
-    @Bindable private var store: StoreOf<PopularReducer>
+    @Perception.Bindable private var store: StoreOf<PopularReducer>
     private let user: User
     @Binding private var setting: Setting
     private let blurRadius: Double

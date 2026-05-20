@@ -7,7 +7,7 @@ import SwiftUI
 import ComposableArchitecture
 
 struct SearchView: View {
-    @Bindable private var store: StoreOf<SearchReducer>
+    @Perception.Bindable private var store: StoreOf<SearchReducer>
     private let keyword: String
     private let user: User
     @Binding private var setting: Setting

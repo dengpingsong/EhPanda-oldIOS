@@ -33,28 +33,58 @@ where PageView: View, Element: Equatable, ID: Hashable, G: Gesture {
 
     var body: some View {
         ScrollViewReader { proxy in
-            ScrollView(showsIndicators: false) {
-                LazyVStack(spacing: spacing) {
-                    ForEach(data, id: id) { index in
-                        content(index)
-                            .gesture(gesture)
+            if #available(iOS 18.0, *) {
+                ScrollView(showsIndicators: false) {
+                    LazyVStack(spacing: spacing) {
+                        ForEach(data, id: id) { index in
+                            content(index)
+                                .gesture(gesture)
+                        }
+                    }
+                    .scrollTargetLayout()
+                    .onAppear { tryScrollTo(id: pagerModel.index + 1, proxy: proxy) }
+                }
+                .scrollPosition(id: $scrollPositionID, anchor: .center)
+                .onScrollPhaseChange { _, newValue in
+                    if newValue == .idle, let index = scrollPositionID {
+                        performingChanges = true
+                        pagerModel.update(.new(index: index - 1))
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                            performingChanges = false
+                        }
                     }
                 }
-                .scrollTargetLayout()
-                .onAppear(perform: { tryScrollTo(id: pagerModel.index + 1, proxy: proxy) })
-            }
-            .scrollPosition(id: $scrollPositionID, anchor: .center)
-            .onScrollPhaseChange { _, newValue in
-                if newValue == .idle, let index = scrollPositionID {
-                    performingChanges = true
-                    pagerModel.update(.new(index: index - 1))
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                        performingChanges = false
-                    }
+                .onChange(of: pagerModel.index) { newValue in
+                    tryScrollTo(id: newValue + 1, proxy: proxy)
                 }
-            }
-            .onChange(of: pagerModel.index) { _, newValue in
-                tryScrollTo(id: newValue + 1, proxy: proxy)
+            } else if #available(iOS 17.0, *) {
+                ScrollView(showsIndicators: false) {
+                    LazyVStack(spacing: spacing) {
+                        ForEach(data, id: id) { index in
+                            content(index)
+                                .gesture(gesture)
+                        }
+                    }
+                    .scrollTargetLayout()
+                    .onAppear { tryScrollTo(id: pagerModel.index + 1, proxy: proxy) }
+                }
+                .scrollPosition(id: $scrollPositionID, anchor: .center)
+                .onChange(of: pagerModel.index) { newValue in
+                    tryScrollTo(id: newValue + 1, proxy: proxy)
+                }
+            } else {
+                ScrollView(showsIndicators: false) {
+                    LazyVStack(spacing: spacing) {
+                        ForEach(data, id: id) { index in
+                            content(index)
+                                .gesture(gesture)
+                        }
+                    }
+                    .onAppear { tryScrollTo(id: pagerModel.index + 1, proxy: proxy) }
+                }
+                .onChange(of: pagerModel.index) { newValue in
+                    tryScrollTo(id: newValue + 1, proxy: proxy)
+                }
             }
         }
     }

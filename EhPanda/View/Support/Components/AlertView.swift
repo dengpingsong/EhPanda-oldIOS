@@ -126,7 +126,7 @@ struct AlertViewButton: View {
                 .textCase(.uppercase)
         }
         .buttonBorderShape(.capsule)
-        .buttonStyle(.glass)
+        .buttonStyle(.bordered)
     }
 }
 
