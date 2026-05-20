@@ -27,80 +27,92 @@ struct DetailSearchView: View {
     }
 
     var body: some View {
-        let content =
-        GenericList(
-            galleries: store.galleries,
-            setting: setting,
-            pageNumber: store.pageNumber,
-            loadingState: store.loadingState,
-            footerLoadingState: store.footerLoadingState,
-            fetchAction: { store.send(.fetchGalleries()) },
-            fetchMoreAction: { store.send(.fetchMoreGalleries) },
-            navigateAction: { store.send(.setNavigation(.detail($0))) },
-            translateAction: {
-                tagTranslator.lookup(word: $0, returnOriginal: !setting.translatesTags)
-            }
-        )
-        .sheet(item: $store.route.sending(\.setNavigation).quickSearch) { _ in
-            QuickSearchView(
-                store: store.scope(state: \.quickDetailSearchState, action: \.quickSearch)
-            ) { keyword in
-                store.send(.setNavigation(nil))
-                store.send(.fetchGalleries(keyword))
-            }
-            .accentColor(setting.accentColor)
-            .autoBlur(radius: blurRadius)
-        }
-        .sheet(item: $store.route.sending(\.setNavigation).filters) { _ in
-            FiltersView(store: store.scope(state: \.filtersState, action: \.filters))
-                .accentColor(setting.accentColor).autoBlur(radius: blurRadius)
-        }
-        .searchable(text: $store.keyword)
-        .searchSuggestions {
-            TagSuggestionView(
-                keyword: $store.keyword, translations: tagTranslator.translations,
-                showsImages: setting.showsImagesInTags, isEnabled: setting.showsTagsSearchSuggestion
+        WithPerceptionTracking {
+            let content =
+            GenericList(
+                galleries: store.galleries,
+                setting: setting,
+                pageNumber: store.pageNumber,
+                loadingState: store.loadingState,
+                footerLoadingState: store.footerLoadingState,
+                fetchAction: { store.send(.fetchGalleries()) },
+                fetchMoreAction: { store.send(.fetchMoreGalleries) },
+                navigateAction: { store.send(.setNavigation(.detail($0))) },
+                translateAction: {
+                    tagTranslator.lookup(word: $0, returnOriginal: !setting.translatesTags)
+                }
             )
-        }
-        .onSubmit(of: .search) {
-            store.send(.fetchGalleries())
-        }
-        .onAppear {
-            if store.galleries.isEmpty {
-                DispatchQueue.main.async {
-                    store.send(.fetchGalleries(keyword))
+            .sheet(item: $store.route.sending(\.setNavigation).quickSearch) { _ in
+                WithPerceptionTracking {
+                    QuickSearchView(
+                        store: store.scope(state: \.quickDetailSearchState, action: \.quickSearch)
+                    ) { keyword in
+                        store.send(.setNavigation(nil))
+                        store.send(.fetchGalleries(keyword))
+                    }
+                    .accentColor(setting.accentColor)
+                    .autoBlur(radius: blurRadius)
                 }
             }
-        }
-        .background(navigationLink)
-        .toolbar(content: toolbar)
-        .navigationTitle(store.lastKeyword)
-
-        if DeviceUtil.isPad {
-            content
-                .sheet(item: $store.route.sending(\.setNavigation).detail, id: \.self) { route in
-                    NavigationView {
-                        DetailView(
-                            store: store.scope(state: \.detailState.wrappedValue!, action: \.detail),
-                            gid: route.wrappedValue, user: user, setting: $setting,
-                            blurRadius: blurRadius, tagTranslator: tagTranslator
-                        )
-                    }
-                    .autoBlur(radius: blurRadius).environment(\.inSheet, true).navigationViewStyle(.stack)
+            .sheet(item: $store.route.sending(\.setNavigation).filters) { _ in
+                WithPerceptionTracking {
+                    FiltersView(store: store.scope(state: \.filtersState, action: \.filters))
+                        .accentColor(setting.accentColor).autoBlur(radius: blurRadius)
                 }
-        } else {
-            content
+            }
+            .searchable(text: $store.keyword)
+            .searchSuggestions {
+                WithPerceptionTracking {
+                    TagSuggestionView(
+                        keyword: $store.keyword, translations: tagTranslator.translations,
+                        showsImages: setting.showsImagesInTags, isEnabled: setting.showsTagsSearchSuggestion
+                    )
+                }
+            }
+            .onSubmit(of: .search) {
+                store.send(.fetchGalleries())
+            }
+            .onAppear {
+                if store.galleries.isEmpty {
+                    DispatchQueue.main.async {
+                        store.send(.fetchGalleries(keyword))
+                    }
+                }
+            }
+            .background(navigationLink)
+            .toolbar(content: toolbar)
+            .navigationTitle(store.lastKeyword)
+
+            if DeviceUtil.isPad {
+                content
+                    .sheet(item: $store.route.sending(\.setNavigation).detail, id: \.self) { route in
+                        WithPerceptionTracking {
+                            NavigationView {
+                                DetailView(
+                                    store: store.scope(state: \.detailState.wrappedValue!, action: \.detail),
+                                    gid: route.wrappedValue, user: user, setting: $setting,
+                                    blurRadius: blurRadius, tagTranslator: tagTranslator
+                                )
+                            }
+                            .autoBlur(radius: blurRadius).environment(\.inSheet, true).navigationViewStyle(.stack)
+                        }
+                    }
+            } else {
+                content
+            }
         }
     }
 
     @ViewBuilder private var navigationLink: some View {
         if DeviceUtil.isPhone {
             NavigationLink(unwrapping: $store.route, case: \.detail) { route in
-                DetailView(
-                    store: store.scope(state: \.detailState.wrappedValue!, action: \.detail),
-                    gid: route.wrappedValue, user: user, setting: $setting,
-                    blurRadius: blurRadius, tagTranslator: tagTranslator
-                )
+                WithPerceptionTracking {
+                    DetailView(
+                        store: store.scope(state: \.detailState.wrappedValue!, action: \.detail),
+                        gid: route.wrappedValue, user: user, setting: $setting,
+                        blurRadius: blurRadius, tagTranslator: tagTranslator
+                    )
+                }
             }
         }
     }
