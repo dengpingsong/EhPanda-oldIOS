@@ -21,73 +21,79 @@ struct LoginView: View {
 
     // MARK: LoginView
     var body: some View {
-        GeometryReader { proxy in
-            ZStack {
-                Group {
-                    WaveForm(color: Color(.systemGray2).opacity(0.2), amplify: 100, isReversed: true)
-                    WaveForm(color: Color(.systemGray).opacity(0.2), amplify: 120, isReversed: false)
-                }
-                .offset(y: proxy.size.height * 0.3)
-                .drawingGroup()
+        WithPerceptionTracking {
+            GeometryReader { proxy in
+                WithPerceptionTracking {
+                    ZStack {
+                        Group {
+                            WaveForm(color: Color(.systemGray2).opacity(0.2), amplify: 100, isReversed: true)
+                            WaveForm(color: Color(.systemGray).opacity(0.2), amplify: 120, isReversed: false)
+                        }
+                        .offset(y: proxy.size.height * 0.3)
+                        .drawingGroup()
 
-                VStack(spacing: 15) {
-                    Group {
-                        LoginTextField(
-                            focusedField: $focusedField,
-                            text: $store.username,
-                            description: L10n.Localizable.LoginView.Title.username,
-                            isPassword: false
-                        )
-                        LoginTextField(
-                            focusedField: $focusedField,
-                            text: $store.password,
-                            description: L10n.Localizable.LoginView.Title.password,
-                            isPassword: true
-                        )
-                    }
-                    .padding(.horizontal, proxy.size.width * 0.2)
+                        VStack(spacing: 15) {
+                            Group {
+                                LoginTextField(
+                                    focusedField: $focusedField,
+                                    text: $store.username,
+                                    description: L10n.Localizable.LoginView.Title.username,
+                                    isPassword: false
+                                )
+                                LoginTextField(
+                                    focusedField: $focusedField,
+                                    text: $store.password,
+                                    description: L10n.Localizable.LoginView.Title.password,
+                                    isPassword: true
+                                )
+                            }
+                            .padding(.horizontal, proxy.size.width * 0.2)
 
-                    Button {
-                        store.send(.login)
-                    } label: {
-                        Image(systemSymbol: .chevronForward)
-                            .padding()
+                            Button {
+                                store.send(.login)
+                            } label: {
+                                Image(systemSymbol: .chevronForward)
+                                    .padding()
+                                    .clipShape(.circle)
+                            }
+                            .overlay {
+                                ProgressView()
+                                    .tint(nil)
+                                    .opacity(store.loginState == .loading ? 1 : 0)
+                            }
+                            .font(.title)
+                            .foregroundStyle(store.loginButtonColor)
+                            .disabled(store.loginButtonDisabled)
                             .clipShape(.circle)
+                            .padding(.top, 30)
+                        }
                     }
-                    .overlay {
-                        ProgressView()
-                            .tint(nil)
-                            .opacity(store.loginState == .loading ? 1 : 0)
-                    }
-                    .font(.title)
-                    .foregroundStyle(store.loginButtonColor)
-                    .disabled(store.loginButtonDisabled)
-                    .clipShape(.circle)
-                    .padding(.top, 30)
                 }
             }
-        }
-        .synchronize($store.focusedField, $focusedField)
-        .sheet(item: $store.route.sending(\.setNavigation).webView, id: \.absoluteString) { route in
-            WebView(url: route.wrappedValue) {
-                store.send(.loginDone(.success(nil)))
+            .synchronize($store.focusedField, $focusedField)
+            .sheet(item: $store.route.sending(\.setNavigation).webView, id: \.absoluteString) { route in
+                WithPerceptionTracking {
+                    WebView(url: route.wrappedValue) {
+                        store.send(.loginDone(.success(nil)))
+                    }
+                    .ignoresSafeArea(edges: .bottom)
+                    .autoBlur(radius: blurRadius)
+                }
             }
-            .ignoresSafeArea(edges: .bottom)
-            .autoBlur(radius: blurRadius)
-        }
-        .onSubmit {
-            switch focusedField {
-            case .username:
-                focusedField = .password
-            default:
-                focusedField = nil
-                store.send(.login)
+            .onSubmit {
+                switch focusedField {
+                case .username:
+                    focusedField = .password
+                default:
+                    focusedField = nil
+                    store.send(.login)
+                }
             }
+            .animation(.default, value: store.loginState)
+            .toolbar(content: toolbar)
+            .navigationTitle(L10n.Localizable.LoginView.Title.login)
+            .ignoresSafeArea()
         }
-        .animation(.default, value: store.loginState)
-        .toolbar(content: toolbar)
-        .navigationTitle(L10n.Localizable.LoginView.Title.login)
-        .ignoresSafeArea()
     }
     // MARK: Toolbar
     private func toolbar() -> some ToolbarContent {

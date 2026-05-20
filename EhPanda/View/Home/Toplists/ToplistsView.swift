@@ -29,66 +29,72 @@ struct ToplistsView: View {
     }
 
     var body: some View {
-        let content =
-        GenericList(
-            galleries: store.filteredGalleries ?? [],
-            setting: setting,
-            pageNumber: store.pageNumber,
-            loadingState: store.loadingState ?? .idle,
-            footerLoadingState: store.footerLoadingState ?? .idle,
-            fetchAction: { store.send(.fetchGalleries()) },
-            fetchMoreAction: { store.send(.fetchMoreGalleries) },
-            navigateAction: { store.send(.setNavigation(.detail($0))) },
-            translateAction: {
-                tagTranslator.lookup(word: $0, returnOriginal: !setting.translatesTags)
-            }
-        )
-        .jumpPageAlert(
-            index: $store.jumpPageIndex,
-            isPresented: $store.jumpPageAlertPresented,
-            isFocused: $store.jumpPageAlertFocused,
-            pageNumber: store.pageNumber ?? .init(),
-            jumpAction: { store.send(.performJumpPage) }
-        )
-        .searchable(text: $store.keyword, prompt: L10n.Localizable.Searchable.Prompt.filter)
-        .navigationBarBackButtonHidden(store.jumpPageAlertPresented)
-        .animation(.default, value: store.jumpPageAlertPresented)
-        .onAppear {
-            if store.galleries?.isEmpty != false {
-                DispatchQueue.main.async {
-                    store.send(.fetchGalleries())
+        WithPerceptionTracking {
+            let content =
+            GenericList(
+                galleries: store.filteredGalleries ?? [],
+                setting: setting,
+                pageNumber: store.pageNumber,
+                loadingState: store.loadingState ?? .idle,
+                footerLoadingState: store.footerLoadingState ?? .idle,
+                fetchAction: { store.send(.fetchGalleries()) },
+                fetchMoreAction: { store.send(.fetchMoreGalleries) },
+                navigateAction: { store.send(.setNavigation(.detail($0))) },
+                translateAction: {
+                    tagTranslator.lookup(word: $0, returnOriginal: !setting.translatesTags)
                 }
-            }
-        }
-        .background(navigationLink)
-        .toolbar(content: toolbar)
-        .navigationTitle(navigationTitle)
-
-        if DeviceUtil.isPad {
-            content
-                .sheet(item: $store.route.sending(\.setNavigation).detail, id: \.self) { route in
-                    NavigationView {
-                        DetailView(
-                            store: store.scope(state: \.detailState.wrappedValue!, action: \.detail),
-                            gid: route.wrappedValue, user: user, setting: $setting,
-                            blurRadius: blurRadius, tagTranslator: tagTranslator
-                        )
+            )
+            .jumpPageAlert(
+                index: $store.jumpPageIndex,
+                isPresented: $store.jumpPageAlertPresented,
+                isFocused: $store.jumpPageAlertFocused,
+                pageNumber: store.pageNumber ?? .init(),
+                jumpAction: { store.send(.performJumpPage) }
+            )
+            .searchable(text: $store.keyword, prompt: L10n.Localizable.Searchable.Prompt.filter)
+            .navigationBarBackButtonHidden(store.jumpPageAlertPresented)
+            .animation(.default, value: store.jumpPageAlertPresented)
+            .onAppear {
+                if store.galleries?.isEmpty != false {
+                    DispatchQueue.main.async {
+                        store.send(.fetchGalleries())
                     }
-                    .autoBlur(radius: blurRadius).environment(\.inSheet, true).navigationViewStyle(.stack)
                 }
-        } else {
-            content
+            }
+            .background(navigationLink)
+            .toolbar(content: toolbar)
+            .navigationTitle(navigationTitle)
+
+            if DeviceUtil.isPad {
+                content
+                    .sheet(item: $store.route.sending(\.setNavigation).detail, id: \.self) { route in
+                        WithPerceptionTracking {
+                            NavigationView {
+                                DetailView(
+                                    store: store.scope(state: \.detailState.wrappedValue!, action: \.detail),
+                                    gid: route.wrappedValue, user: user, setting: $setting,
+                                    blurRadius: blurRadius, tagTranslator: tagTranslator
+                                )
+                            }
+                            .autoBlur(radius: blurRadius).environment(\.inSheet, true).navigationViewStyle(.stack)
+                        }
+                    }
+            } else {
+                content
+            }
         }
     }
 
     @ViewBuilder private var navigationLink: some View {
         if DeviceUtil.isPhone {
             NavigationLink(unwrapping: $store.route, case: \.detail) { route in
-                DetailView(
-                    store: store.scope(state: \.detailState.wrappedValue!, action: \.detail),
-                    gid: route.wrappedValue, user: user, setting: $setting,
-                    blurRadius: blurRadius, tagTranslator: tagTranslator
-                )
+                WithPerceptionTracking {
+                    DetailView(
+                        store: store.scope(state: \.detailState.wrappedValue!, action: \.detail),
+                        gid: route.wrappedValue, user: user, setting: $setting,
+                        blurRadius: blurRadius, tagTranslator: tagTranslator
+                    )
+                }
             }
         }
     }

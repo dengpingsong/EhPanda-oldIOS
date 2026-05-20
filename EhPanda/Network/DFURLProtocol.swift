@@ -7,6 +7,8 @@ import Foundation
 
 class DFURLProtocol: URLProtocol {
     private var dfRequest: DFRequest?
+    private var fallbackSession: URLSession?
+    private var fallbackTask: URLSessionDataTask?
     static let requestIdentifier = "DomainFrontingRequest"
 
     override class func canonicalRequest(
@@ -38,6 +40,10 @@ class DFURLProtocol: URLProtocol {
     override func stopLoading() {
         dfRequest?.stop()
         dfRequest = nil
+        fallbackTask?.cancel()
+        fallbackTask = nil
+        fallbackSession?.invalidateAndCancel()
+        fallbackSession = nil
     }
 }
 
@@ -50,7 +56,11 @@ extension DFURLProtocol: DFRequestDelegate {
         client?.urlProtocol(self, didLoad: data)
     }
     func dfRequest(_ request: URLRequest, didFailWithError error: Error) {
-        client?.urlProtocol(self, didFailWithError: error)
+        guard shouldFallback(for: error) else {
+            client?.urlProtocol(self, didFailWithError: error)
+            return
+        }
+        startFallbackLoading()
     }
     func dfRequest(
         _ request: DFRequest, wasRedirectedTo urlRequest: URLRequest,
@@ -63,5 +73,76 @@ extension DFURLProtocol: DFRequestDelegate {
         cacheStoragePolicy policy: URLCache.StoragePolicy
     ) {
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: policy)
+    }
+}
+
+private extension DFURLProtocol {
+    func shouldFallback(for error: Error) -> Bool {
+        guard request.url?.scheme == "https", fallbackTask == nil else { return false }
+
+        let nsError = error as NSError
+        if nsError.domain.localizedCaseInsensitiveContains("ssl") {
+            return true
+        }
+
+        guard nsError.domain == NSURLErrorDomain else { return false }
+        return [
+            NSURLErrorSecureConnectionFailed,
+            NSURLErrorServerCertificateHasBadDate,
+            NSURLErrorServerCertificateUntrusted,
+            NSURLErrorServerCertificateHasUnknownRoot,
+            NSURLErrorServerCertificateNotYetValid,
+            NSURLErrorClientCertificateRejected,
+            NSURLErrorClientCertificateRequired
+        ].contains(nsError.code)
+    }
+
+    func startFallbackLoading() {
+        guard fallbackTask == nil,
+              let request = (request as NSURLRequest).mutableCopy() as? NSMutableURLRequest
+        else { return }
+
+        dfRequest?.stop()
+        dfRequest = nil
+
+        DFURLProtocol.setProperty(
+            true,
+            forKey: Self.requestIdentifier,
+            in: request
+        )
+
+        let configuration = URLSessionConfiguration.default
+        let session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
+        fallbackSession = session
+        fallbackTask = session.dataTask(with: request as URLRequest)
+        fallbackTask?.resume()
+    }
+}
+
+extension DFURLProtocol: URLSessionDataDelegate {
+    func urlSession(
+        _ session: URLSession,
+        dataTask: URLSessionDataTask,
+        didReceive response: URLResponse,
+        completionHandler: @escaping (URLSession.ResponseDisposition) -> Void
+    ) {
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        completionHandler(.allow)
+    }
+
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+        client?.urlProtocol(self, didLoad: data)
+    }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        fallbackTask = nil
+        fallbackSession?.finishTasksAndInvalidate()
+        fallbackSession = nil
+
+        if let error {
+            client?.urlProtocol(self, didFailWithError: error)
+        } else {
+            client?.urlProtocolDidFinishLoading(self)
+        }
     }
 }

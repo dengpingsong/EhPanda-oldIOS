@@ -11,22 +11,24 @@ import ComposableArchitecture
 
     var body: some Scene {
         WindowGroup {
-            ZStack {
-                let databaseState = appDelegate.store.appDelegateState.migrationState.databaseState
+            WithPerceptionTracking {
+                ZStack {
+                    let databaseState = appDelegate.store.appDelegateState.migrationState.databaseState
 
-                if databaseState == .idle {
-                    TabBarView(store: appDelegate.store).onAppear(perform: addTouchHandler).accentColor(.primary)
-                }
-                MigrationView(
-                    store: appDelegate.store.scope(
-                        state: \.appDelegateState.migrationState,
-                        action: \.appDelegate.migration
+                    if databaseState == .idle {
+                        TabBarView(store: appDelegate.store).onAppear(perform: addTouchHandler).accentColor(.primary)
+                    }
+                    MigrationView(
+                        store: appDelegate.store.scope(
+                            state: \.appDelegateState.migrationState,
+                            action: \.appDelegate.migration
+                        )
                     )
-                )
-                .opacity(databaseState != .idle ? 1 : 0)
-                .animation(.linear(duration: 0.5), value: databaseState)
+                    .opacity(databaseState != .idle ? 1 : 0)
+                    .animation(.linear(duration: 0.5), value: databaseState)
+                }
+                .navigationViewStyle(.stack)
             }
-            .navigationViewStyle(.stack)
         }
     }
 }

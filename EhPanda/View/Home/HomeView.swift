@@ -29,87 +29,93 @@ struct HomeView: View {
 
     // MARK: HomeView
     var body: some View {
-        NavigationView {
-            let content =
-            ZStack {
-                ScrollView(showsIndicators: false) {
-                    VStack {
-                        if !store.popularGalleries.isEmpty {
-                            CardSlideSection(
-                                galleries: store.popularGalleries,
-                                pageIndex: $store.cardPageIndex,
-                                currentID: store.currentCardID,
-                                colors: store.cardColors,
-                                navigateAction: navigateTo(gid:),
-                                webImageSuccessAction: { gid, result in
-                                    store.send(.analyzeImageColors(gid, result))
-                                }
-                            )
-                            .equatable().allowsHitTesting(store.allowsCardHitTesting)
-                        }
-                        Group {
-                            if store.frontpageGalleries.count > 1 {
-                                CoverWallSection(
-                                    galleries: store.frontpageGalleries,
-                                    isLoading: store.frontpageLoadingState == .loading,
+        WithPerceptionTracking {
+            NavigationView {
+                let content =
+                ZStack {
+                    ScrollView(showsIndicators: false) {
+                        VStack {
+                            if !store.popularGalleries.isEmpty {
+                                CardSlideSection(
+                                    galleries: store.popularGalleries,
+                                    pageIndex: $store.cardPageIndex,
+                                    currentID: store.currentCardID,
+                                    colors: store.cardColors,
                                     navigateAction: navigateTo(gid:),
-                                    showAllAction: { store.send(.setNavigation(.section(.frontpage))) },
-                                    reloadAction: { store.send(.fetchFrontpageGalleries) }
+                                    webImageSuccessAction: { gid, result in
+                                        store.send(.analyzeImageColors(gid, result))
+                                    }
                                 )
+                                .equatable().allowsHitTesting(store.allowsCardHitTesting)
                             }
-                            ToplistsSection(
-                                galleries: store.toplistsGalleries,
-                                isLoading: !store.toplistsLoadingState
-                                    .values.allSatisfy({ $0 != .loading }),
-                                navigateAction: navigateTo(gid:),
-                                showAllAction: { store.send(.setNavigation(.section(.toplists))) },
-                                reloadAction: { store.send(.fetchAllToplistsGalleries) }
-                            )
-                            MiscGridSection(navigateAction: navigateTo(type:))
+                            Group {
+                                if store.frontpageGalleries.count > 1 {
+                                    CoverWallSection(
+                                        galleries: store.frontpageGalleries,
+                                        isLoading: store.frontpageLoadingState == .loading,
+                                        navigateAction: navigateTo(gid:),
+                                        showAllAction: { store.send(.setNavigation(.section(.frontpage))) },
+                                        reloadAction: { store.send(.fetchFrontpageGalleries) }
+                                    )
+                                }
+                                ToplistsSection(
+                                    galleries: store.toplistsGalleries,
+                                    isLoading: !store.toplistsLoadingState
+                                        .values.allSatisfy({ $0 != .loading }),
+                                    navigateAction: navigateTo(gid:),
+                                    showAllAction: { store.send(.setNavigation(.section(.toplists))) },
+                                    reloadAction: { store.send(.fetchAllToplistsGalleries) }
+                                )
+                                MiscGridSection(navigateAction: navigateTo(type:))
+                            }
+                            .padding(.vertical)
                         }
-                        .padding(.vertical)
+                    }
+                    .opacity(store.popularGalleries.isEmpty ? 0 : 1).zIndex(2)
+
+                    LoadingView()
+                        .opacity(
+                            store.popularLoadingState == .loading
+                            && store.popularGalleries.isEmpty ? 1 : 0
+                        )
+                        .zIndex(0)
+
+                    let error = store.popularLoadingState.failed
+                    ErrorView(error: error ?? .unknown) {
+                        store.send(.fetchAllGalleries)
+                    }
+                    .opacity(store.popularGalleries.isEmpty && error != nil ? 1 : 0)
+                    .zIndex(1)
+                }
+                .animation(.default, value: store.popularLoadingState)
+                .onAppear {
+                    if store.popularGalleries.isEmpty {
+                        store.send(.fetchAllGalleries)
                     }
                 }
-                .opacity(store.popularGalleries.isEmpty ? 0 : 1).zIndex(2)
+                .background(navigationLinks)
+                .toolbar(content: toolbar)
+                .navigationTitle(L10n.Localizable.HomeView.Title.home)
 
-                LoadingView()
-                    .opacity(
-                        store.popularLoadingState == .loading
-                        && store.popularGalleries.isEmpty ? 1 : 0
-                    )
-                    .zIndex(0)
-
-                let error = store.popularLoadingState.failed
-                ErrorView(error: error ?? .unknown) {
-                    store.send(.fetchAllGalleries)
-                }
-                .opacity(store.popularGalleries.isEmpty && error != nil ? 1 : 0)
-                .zIndex(1)
-            }
-            .animation(.default, value: store.popularLoadingState)
-            .onAppear {
-                if store.popularGalleries.isEmpty {
-                    store.send(.fetchAllGalleries)
-                }
-            }
-            .background(navigationLinks)
-            .toolbar(content: toolbar)
-            .navigationTitle(L10n.Localizable.HomeView.Title.home)
-
-            if DeviceUtil.isPad {
-                content
-                    .sheet(item: $store.route.sending(\.setNavigation).detail, id: \.self) { route in
-                        NavigationView {
-                            DetailView(
-                                store: store.scope(state: \.detailState.wrappedValue!, action: \.detail),
-                                gid: route.wrappedValue, user: user, setting: $setting,
-                                blurRadius: blurRadius, tagTranslator: tagTranslator
-                            )
+                if DeviceUtil.isPad {
+                    content
+                        .sheet(item: $store.route.sending(\.setNavigation).detail, id: \.self) { route in
+                            WithPerceptionTracking {
+                                NavigationView {
+                                    DetailView(
+                                        store: store.scope(state: \.detailState.wrappedValue!, action: \.detail),
+                                        gid: route.wrappedValue, user: user, setting: $setting,
+                                        blurRadius: blurRadius, tagTranslator: tagTranslator
+                                    )
+                                }
+                                .autoBlur(radius: blurRadius)
+                                .environment(\.inSheet, true)
+                                .navigationViewStyle(.stack)
+                            }
                         }
-                        .autoBlur(radius: blurRadius).environment(\.inSheet, true).navigationViewStyle(.stack)
-                    }
-            } else {
-                content
+                } else {
+                    content
+                }
             }
         }
     }
@@ -138,47 +144,53 @@ private extension HomeView {
     }
     var detailViewLink: some View {
         NavigationLink(unwrapping: $store.route, case: \.detail) { route in
-            DetailView(
-                store: store.scope(state: \.detailState.wrappedValue!, action: \.detail),
-                gid: route.wrappedValue, user: user, setting: $setting,
-                blurRadius: blurRadius, tagTranslator: tagTranslator
-            )
+            WithPerceptionTracking {
+                DetailView(
+                    store: store.scope(state: \.detailState.wrappedValue!, action: \.detail),
+                    gid: route.wrappedValue, user: user, setting: $setting,
+                    blurRadius: blurRadius, tagTranslator: tagTranslator
+                )
+            }
         }
     }
     var miscGridLink: some View {
         NavigationLink(unwrapping: $store.route, case: \.misc) { route in
-            switch route.wrappedValue {
-            case .popular:
-                PopularView(
-                    store: store.scope(state: \.popularState, action: \.popular),
-                    user: user, setting: $setting, blurRadius: blurRadius, tagTranslator: tagTranslator
-                )
-            case .watched:
-                WatchedView(
-                    store: store.scope(state: \.watchedState, action: \.watched),
-                    user: user, setting: $setting, blurRadius: blurRadius, tagTranslator: tagTranslator
-                )
-            case .history:
-                HistoryView(
-                    store: store.scope(state: \.historyState, action: \.history),
-                    user: user, setting: $setting, blurRadius: blurRadius, tagTranslator: tagTranslator
-                )
+            WithPerceptionTracking {
+                switch route.wrappedValue {
+                case .popular:
+                    PopularView(
+                        store: store.scope(state: \.popularState, action: \.popular),
+                        user: user, setting: $setting, blurRadius: blurRadius, tagTranslator: tagTranslator
+                    )
+                case .watched:
+                    WatchedView(
+                        store: store.scope(state: \.watchedState, action: \.watched),
+                        user: user, setting: $setting, blurRadius: blurRadius, tagTranslator: tagTranslator
+                    )
+                case .history:
+                    HistoryView(
+                        store: store.scope(state: \.historyState, action: \.history),
+                        user: user, setting: $setting, blurRadius: blurRadius, tagTranslator: tagTranslator
+                    )
+                }
             }
         }
     }
     var sectionLink: some View {
         NavigationLink(unwrapping: $store.route, case: \.section) { route in
-            switch route.wrappedValue {
-            case .frontpage:
-                FrontpageView(
-                    store: store.scope(state: \.frontpageState, action: \.frontpage),
-                    user: user, setting: $setting, blurRadius: blurRadius, tagTranslator: tagTranslator
-                )
-            case .toplists:
-                ToplistsView(
-                    store: store.scope(state: \.toplistsState, action: \.toplists),
-                    user: user, setting: $setting, blurRadius: blurRadius, tagTranslator: tagTranslator
-                )
+            WithPerceptionTracking {
+                switch route.wrappedValue {
+                case .frontpage:
+                    FrontpageView(
+                        store: store.scope(state: \.frontpageState, action: \.frontpage),
+                        user: user, setting: $setting, blurRadius: blurRadius, tagTranslator: tagTranslator
+                    )
+                case .toplists:
+                    ToplistsView(
+                        store: store.scope(state: \.toplistsState, action: \.toplists),
+                        user: user, setting: $setting, blurRadius: blurRadius, tagTranslator: tagTranslator
+                    )
+                }
             }
         }
     }

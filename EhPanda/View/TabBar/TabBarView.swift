@@ -51,33 +51,37 @@ struct TabBarView: View {
     }
 
     var body: some View {
-        ZStack {
-            TabView(
-                selection: .init(
-                    get: { store.tabBarState.tabBarItemType },
-                    set: { store.send(.tabBar(.setTabBarItemType($0))) }
-                )
-            ) {
-                ForEach(TabBarItemType.allCases) { type in
-                    tabContent(for: type)
-                        .tabItem(type.label).tag(type)
+        WithPerceptionTracking {
+            ZStack {
+                TabView(
+                    selection: .init(
+                        get: { store.tabBarState.tabBarItemType },
+                        set: { store.send(.tabBar(.setTabBarItemType($0))) }
+                    )
+                ) {
+                    ForEach(TabBarItemType.allCases) { type in
+                        WithPerceptionTracking {
+                            tabContent(for: type)
+                                .tabItem(type.label).tag(type)
+                        }
+                    }
+                    .accentColor(store.settingState.setting.accentColor)
                 }
-                .accentColor(store.settingState.setting.accentColor)
-            }
-            .autoBlur(radius: store.appLockState.blurRadius)
+                .autoBlur(radius: store.appLockState.blurRadius)
 
-            lockButton
+                lockButton
+            }
+            .modifier(SheetsModifier(store: store))
+            .progressHUD(
+                config: store.appRouteState.hudConfig,
+                unwrapping: $store.appRouteState.route,
+                case: \.hud
+            )
+            .onChange(of: scenePhase, perform: { newValue in
+                store.send(.onScenePhaseChange(newValue))
+            })
+            .onOpenURL { store.send(.appRoute(.handleDeepLink($0))) }
         }
-        .modifier(SheetsModifier(store: store))
-        .progressHUD(
-            config: store.appRouteState.hudConfig,
-            unwrapping: $store.appRouteState.route,
-            case: \.hud
-        )
-        .onChange(of: scenePhase, perform: { newValue in
-            store.send(.onScenePhaseChange(newValue))
-        })
-        .onOpenURL { store.send(.appRoute(.handleDeepLink($0))) }
     }
 
     private var lockButton: some View {
@@ -86,7 +90,9 @@ struct TabBarView: View {
         } label: {
             Image(systemSymbol: .lockFill)
         }
-        .font(.system(size: 80)).opacity(store.appLockState.isAppLocked ? 1 : 0)
+        .font(.system(size: 80))
+        .opacity(store.appLockState.isAppLocked ? 1 : 0)
+        .allowsHitTesting(store.appLockState.isAppLocked)
     }
 }
 
@@ -94,37 +100,45 @@ private struct SheetsModifier: ViewModifier {
     @Perception.Bindable var store: StoreOf<AppReducer>
 
     func body(content: Content) -> some View {
-        content
-            .sheet(item: $store.appRouteState.route.sending(\.appRoute.setNavigation).newDawn) { greeting in
-                NewDawnView(greeting: greeting)
-                    .autoBlur(radius: store.appLockState.blurRadius)
-            }
-            .sheet(item: $store.appRouteState.route.sending(\.appRoute.setNavigation).setting) { _ in
-                SettingView(
-                    store: store.scope(state: \.settingState, action: \.setting),
-                    blurRadius: store.appLockState.blurRadius
-                )
-                .accentColor(store.settingState.setting.accentColor)
-                .autoBlur(radius: store.appLockState.blurRadius)
-            }
-            .sheet(item: $store.appRouteState.route.sending(\.appRoute.setNavigation).detail, id: \.self) { route in
-                NavigationView {
-                    DetailView(
-                        store: store.scope(
-                            state: \.appRouteState.detailState.wrappedValue!,
-                            action: \.appRoute.detail
-                        ),
-                        gid: route.wrappedValue, user: store.settingState.user,
-                        setting: $store.settingState.setting,
-                        blurRadius: store.appLockState.blurRadius,
-                        tagTranslator: store.settingState.tagTranslator
-                    )
+        WithPerceptionTracking {
+            content
+                .sheet(item: $store.appRouteState.route.sending(\.appRoute.setNavigation).newDawn) { greeting in
+                    WithPerceptionTracking {
+                        NewDawnView(greeting: greeting)
+                            .autoBlur(radius: store.appLockState.blurRadius)
+                    }
                 }
-                .accentColor(store.settingState.setting.accentColor)
-                .autoBlur(radius: store.appLockState.blurRadius)
-                .environment(\.inSheet, true)
-                .navigationViewStyle(.stack)
-            }
+                .sheet(item: $store.appRouteState.route.sending(\.appRoute.setNavigation).setting) { _ in
+                    WithPerceptionTracking {
+                        SettingView(
+                            store: store.scope(state: \.settingState, action: \.setting),
+                            blurRadius: store.appLockState.blurRadius
+                        )
+                        .accentColor(store.settingState.setting.accentColor)
+                        .autoBlur(radius: store.appLockState.blurRadius)
+                    }
+                }
+                .sheet(item: $store.appRouteState.route.sending(\.appRoute.setNavigation).detail, id: \.self) { route in
+                    WithPerceptionTracking {
+                        NavigationView {
+                            DetailView(
+                                store: store.scope(
+                                    state: \.appRouteState.detailState.wrappedValue!,
+                                    action: \.appRoute.detail
+                                ),
+                                gid: route.wrappedValue, user: store.settingState.user,
+                                setting: $store.settingState.setting,
+                                blurRadius: store.appLockState.blurRadius,
+                                tagTranslator: store.settingState.tagTranslator
+                            )
+                        }
+                        .accentColor(store.settingState.setting.accentColor)
+                        .autoBlur(radius: store.appLockState.blurRadius)
+                        .environment(\.inSheet, true)
+                        .navigationViewStyle(.stack)
+                    }
+                }
+        }
     }
 }
 

@@ -175,12 +175,6 @@ struct AppReducer {
 
                 case .setting(.loadUserSettingsDone):
                     var effects = [Effect<Action>]()
-                    let threshold = state.settingState.setting.autoLockPolicy.rawValue
-                    let blurRadius = state.settingState.setting.backgroundBlurRadius
-                    if threshold >= 0 {
-                        state.appLockState.becameInactiveDate = .distantPast
-                        effects.append(.send(.appLock(.onBecomeActive(threshold, blurRadius))))
-                    }
                     if state.settingState.setting.detectsLinksFromClipboard {
                         effects.append(.send(.appRoute(.detectClipboardURL)))
                     }

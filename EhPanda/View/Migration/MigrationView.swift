@@ -19,30 +19,32 @@ struct MigrationView: View {
     }
 
     var body: some View {
-        NavigationView {
-            ZStack {
-                reversedPrimary.ignoresSafeArea()
-                LoadingView(title: L10n.Localizable.LoadingView.Title.preparingDatabase)
-                    .opacity(store.databaseState == .loading ? 1 : 0)
-                let error = store.databaseState.failed
-                let errorNonNil = error ?? .databaseCorrupted(nil)
-                AlertView(symbol: errorNonNil.symbol, message: errorNonNil.localizedDescription) {
-                    AlertViewButton(title: L10n.Localizable.ErrorView.Button.dropDatabase) {
-                        store.send(.setNavigation(.dropDialog))
-                    }
-                    .confirmationDialog(
-                        message: L10n.Localizable.ConfirmationDialog.Title.dropDatabase,
-                        unwrapping: $store.route,
-                        case: \.dropDialog
-                    ) {
-                        Button(L10n.Localizable.ConfirmationDialog.Button.dropDatabase, role: .destructive) {
-                            store.send(.dropDatabase)
+        WithPerceptionTracking {
+            NavigationView {
+                ZStack {
+                    reversedPrimary.ignoresSafeArea()
+                    LoadingView(title: L10n.Localizable.LoadingView.Title.preparingDatabase)
+                        .opacity(store.databaseState == .loading ? 1 : 0)
+                    let error = store.databaseState.failed
+                    let errorNonNil = error ?? .databaseCorrupted(nil)
+                    AlertView(symbol: errorNonNil.symbol, message: errorNonNil.localizedDescription) {
+                        AlertViewButton(title: L10n.Localizable.ErrorView.Button.dropDatabase) {
+                            store.send(.setNavigation(.dropDialog))
+                        }
+                        .confirmationDialog(
+                            message: L10n.Localizable.ConfirmationDialog.Title.dropDatabase,
+                            unwrapping: $store.route,
+                            case: \.dropDialog
+                        ) {
+                            Button(L10n.Localizable.ConfirmationDialog.Button.dropDatabase, role: .destructive) {
+                                store.send(.dropDatabase)
+                            }
                         }
                     }
+                    .opacity(error != nil ? 1 : 0)
                 }
-                .opacity(error != nil ? 1 : 0)
+                .animation(.default, value: store.databaseState)
             }
-            .animation(.default, value: store.databaseState)
         }
     }
 }

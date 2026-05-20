@@ -27,48 +27,52 @@ struct AccountSettingView: View {
 
     // MARK: AccountSettingView
     var body: some View {
-        Form {
-            Section {
-                Picker("", selection: $galleryHost) {
-                    ForEach(GalleryHost.allCases) {
-                        Text($0.rawValue).tag($0)
-                    }
-                }
-                .pickerStyle(.segmented)
-                AccountSection(
-                    route: $store.route,
-                    showsNewDawnGreeting: $showsNewDawnGreeting,
-                    bypassesSNIFiltering: bypassesSNIFiltering,
-                    loginAction: { store.send(.setNavigation(.login)) },
-                    logoutAction: {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                            store.send(.onLogoutConfirmButtonTapped)
+        WithPerceptionTracking {
+            Form {
+                Section {
+                    Picker("", selection: $galleryHost) {
+                        ForEach(GalleryHost.allCases) {
+                            Text($0.rawValue).tag($0)
                         }
-                    },
-                    logoutDialogAction: { store.send(.setNavigation(.logout)) },
-                    configureAccountAction: { store.send(.setNavigation(.ehSetting)) },
-                    manageTagsAction: { store.send(.setNavigation(.webView(Defaults.URL.myTags))) }
+                    }
+                    .pickerStyle(.segmented)
+                    AccountSection(
+                        route: $store.route,
+                        showsNewDawnGreeting: $showsNewDawnGreeting,
+                        bypassesSNIFiltering: bypassesSNIFiltering,
+                        loginAction: { store.send(.setNavigation(.login)) },
+                        logoutAction: {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                store.send(.onLogoutConfirmButtonTapped)
+                            }
+                        },
+                        logoutDialogAction: { store.send(.setNavigation(.logout)) },
+                        configureAccountAction: { store.send(.setNavigation(.ehSetting)) },
+                        manageTagsAction: { store.send(.setNavigation(.webView(Defaults.URL.myTags))) }
+                    )
+                }
+                CookieSection(
+                    ehCookiesState: $store.ehCookiesState,
+                    exCookiesState: $store.exCookiesState,
+                    copyAction: { store.send(.copyCookies($0)) }
                 )
             }
-            CookieSection(
-                ehCookiesState: $store.ehCookiesState,
-                exCookiesState: $store.exCookiesState,
-                copyAction: { store.send(.copyCookies($0)) }
+            .progressHUD(
+                config: store.hudConfig,
+                unwrapping: $store.route,
+                case: \.hud
             )
+            .sheet(item: $store.route.sending(\.setNavigation).webView, id: \.absoluteString) { url in
+                WithPerceptionTracking {
+                    WebView(url: url)
+                        .ignoresSafeArea(edges: .bottom)
+                        .autoBlur(radius: blurRadius)
+                }
+            }
+            .onAppear { store.send(.loadCookies) }
+            .background(navigationLinks)
+            .navigationTitle(L10n.Localizable.AccountSettingView.Title.account)
         }
-        .progressHUD(
-            config: store.hudConfig,
-            unwrapping: $store.route,
-            case: \.hud
-        )
-        .sheet(item: $store.route.sending(\.setNavigation).webView, id: \.absoluteString) { url in
-            WebView(url: url)
-                .ignoresSafeArea(edges: .bottom)
-                .autoBlur(radius: blurRadius)
-        }
-        .onAppear { store.send(.loadCookies) }
-        .background(navigationLinks)
-        .navigationTitle(L10n.Localizable.AccountSettingView.Title.account)
     }
 }
 
@@ -76,16 +80,20 @@ struct AccountSettingView: View {
 private extension AccountSettingView {
     @ViewBuilder var navigationLinks: some View {
         NavigationLink(unwrapping: $store.route, case: \.login) { _ in
-            LoginView(
-                store: store.scope(state: \.loginState, action: \.login),
-                bypassesSNIFiltering: bypassesSNIFiltering, blurRadius: blurRadius
-            )
+            WithPerceptionTracking {
+                LoginView(
+                    store: store.scope(state: \.loginState, action: \.login),
+                    bypassesSNIFiltering: bypassesSNIFiltering, blurRadius: blurRadius
+                )
+            }
         }
         NavigationLink(unwrapping: $store.route, case: \.ehSetting) { _ in
-            EhSettingView(
-                store: store.scope(state: \.ehSettingState, action: \.ehSetting),
-                bypassesSNIFiltering: bypassesSNIFiltering, blurRadius: blurRadius
-            )
+            WithPerceptionTracking {
+                EhSettingView(
+                    store: store.scope(state: \.ehSettingState, action: \.ehSetting),
+                    bypassesSNIFiltering: bypassesSNIFiltering, blurRadius: blurRadius
+                )
+            }
         }
     }
 }

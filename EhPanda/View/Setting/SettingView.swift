@@ -18,19 +18,21 @@ struct SettingView: View {
 
     // MARK: SettingView
     var body: some View {
-        NavigationView {
-            ScrollView {
-                VStack(spacing: 0) {
-                    ForEach(SettingReducer.Route.allCases) { route in
-                        SettingRow(rowType: route) {
-                            store.send(.setNavigation($0))
+        WithPerceptionTracking {
+            NavigationView {
+                ScrollView {
+                    VStack(spacing: 0) {
+                        ForEach(SettingReducer.Route.allCases) { route in
+                            SettingRow(rowType: route) {
+                                store.send(.setNavigation($0))
+                            }
                         }
                     }
+                    .padding(.vertical, 40).padding(.horizontal)
                 }
-                .padding(.vertical, 40).padding(.horizontal)
+                .background(navigationLinks)
+                .navigationTitle(L10n.Localizable.SettingView.Title.setting)
             }
-            .background(navigationLinks)
-            .navigationTitle(L10n.Localizable.SettingView.Title.setting)
         }
     }
 }
@@ -39,64 +41,76 @@ struct SettingView: View {
 private extension SettingView {
     @ViewBuilder var navigationLinks: some View {
         NavigationLink(unwrapping: $store.route, case: \.account) { _ in
-            AccountSettingView(
-                store: store.scope(state: \.accountSettingState, action: \.account),
-                galleryHost: $store.setting.galleryHost,
-                showsNewDawnGreeting: $store.setting.showsNewDawnGreeting,
-                bypassesSNIFiltering: store.setting.bypassesSNIFiltering,
-                blurRadius: blurRadius
-            )
-            .tint(store.setting.accentColor)
+            WithPerceptionTracking {
+                AccountSettingView(
+                    store: store.scope(state: \.accountSettingState, action: \.account),
+                    galleryHost: $store.setting.galleryHost,
+                    showsNewDawnGreeting: $store.setting.showsNewDawnGreeting,
+                    bypassesSNIFiltering: store.setting.bypassesSNIFiltering,
+                    blurRadius: blurRadius
+                )
+                .tint(store.setting.accentColor)
+            }
         }
         NavigationLink(unwrapping: $store.route, case: \.general) { _ in
-            GeneralSettingView(
-                store: store.scope(state: \.generalSettingState, action: \.general),
-                tagTranslatorLoadingState: store.tagTranslatorLoadingState,
-                tagTranslatorEmpty: store.tagTranslator.translations.isEmpty,
-                tagTranslatorHasCustomTranslations: store.tagTranslator.hasCustomTranslations,
-                enablesTagsExtension: $store.setting.enablesTagsExtension,
-                translatesTags: $store.setting.translatesTags,
-                showsTagsSearchSuggestion: $store.setting.showsTagsSearchSuggestion,
-                showsImagesInTags: $store.setting.showsImagesInTags,
-                redirectsLinksToSelectedHost: $store.setting.redirectsLinksToSelectedHost,
-                detectsLinksFromClipboard: $store.setting.detectsLinksFromClipboard,
-                backgroundBlurRadius: $store.setting.backgroundBlurRadius,
-                autoLockPolicy: $store.setting.autoLockPolicy
-            )
-            .tint(store.setting.accentColor)
+            WithPerceptionTracking {
+                GeneralSettingView(
+                    store: store.scope(state: \.generalSettingState, action: \.general),
+                    tagTranslatorLoadingState: store.tagTranslatorLoadingState,
+                    tagTranslatorEmpty: store.tagTranslator.translations.isEmpty,
+                    tagTranslatorHasCustomTranslations: store.tagTranslator.hasCustomTranslations,
+                    enablesTagsExtension: $store.setting.enablesTagsExtension,
+                    translatesTags: $store.setting.translatesTags,
+                    showsTagsSearchSuggestion: $store.setting.showsTagsSearchSuggestion,
+                    showsImagesInTags: $store.setting.showsImagesInTags,
+                    redirectsLinksToSelectedHost: $store.setting.redirectsLinksToSelectedHost,
+                    detectsLinksFromClipboard: $store.setting.detectsLinksFromClipboard,
+                    backgroundBlurRadius: $store.setting.backgroundBlurRadius,
+                    autoLockPolicy: $store.setting.autoLockPolicy
+                )
+                .tint(store.setting.accentColor)
+            }
         }
         NavigationLink(unwrapping: $store.route, case: \.appearance) { _ in
-            AppearanceSettingView(
-                store: store.scope(state: \.appearanceSettingState, action: \.appearance),
-                preferredColorScheme: $store.setting.preferredColorScheme,
-                accentColor: $store.setting.accentColor,
-                appIconType: $store.setting.appIconType,
-                listDisplayMode: $store.setting.listDisplayMode,
-                showsTagsInList: $store.setting.showsTagsInList,
-                listTagsNumberMaximum: $store.setting.listTagsNumberMaximum,
-                displaysJapaneseTitle: $store.setting.displaysJapaneseTitle
-            )
-            .tint(store.setting.accentColor)
+            WithPerceptionTracking {
+                AppearanceSettingView(
+                    store: store.scope(state: \.appearanceSettingState, action: \.appearance),
+                    preferredColorScheme: $store.setting.preferredColorScheme,
+                    accentColor: $store.setting.accentColor,
+                    appIconType: $store.setting.appIconType,
+                    listDisplayMode: $store.setting.listDisplayMode,
+                    showsTagsInList: $store.setting.showsTagsInList,
+                    listTagsNumberMaximum: $store.setting.listTagsNumberMaximum,
+                    displaysJapaneseTitle: $store.setting.displaysJapaneseTitle
+                )
+                .tint(store.setting.accentColor)
+            }
         }
         NavigationLink(unwrapping: $store.route, case: \.reading) { _ in
-            ReadingSettingView(
-                readingDirection: $store.setting.readingDirection,
-                prefetchLimit: $store.setting.prefetchLimit,
-                enablesLandscape: $store.setting.enablesLandscape,
-                contentDividerHeight: $store.setting.contentDividerHeight,
-                maximumScaleFactor: $store.setting.maximumScaleFactor,
-                doubleTapScaleFactor: $store.setting.doubleTapScaleFactor
-            )
-            .tint(store.setting.accentColor)
+            WithPerceptionTracking {
+                ReadingSettingView(
+                    readingDirection: $store.setting.readingDirection,
+                    prefetchLimit: $store.setting.prefetchLimit,
+                    enablesLandscape: $store.setting.enablesLandscape,
+                    contentDividerHeight: $store.setting.contentDividerHeight,
+                    maximumScaleFactor: $store.setting.maximumScaleFactor,
+                    doubleTapScaleFactor: $store.setting.doubleTapScaleFactor
+                )
+                .tint(store.setting.accentColor)
+            }
         }
         NavigationLink(unwrapping: $store.route, case: \.laboratory) { _ in
-            LaboratorySettingView(
-                bypassesSNIFiltering: $store.setting.bypassesSNIFiltering
-            )
-            .tint(store.setting.accentColor)
+            WithPerceptionTracking {
+                LaboratorySettingView(
+                    bypassesSNIFiltering: $store.setting.bypassesSNIFiltering
+                )
+                .tint(store.setting.accentColor)
+            }
         }
         NavigationLink(unwrapping: $store.route, case: \.about) { _ in
-            AboutView().tint(store.setting.accentColor)
+            WithPerceptionTracking {
+                AboutView().tint(store.setting.accentColor)
+            }
         }
     }
 }

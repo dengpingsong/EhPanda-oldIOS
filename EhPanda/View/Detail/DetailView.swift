@@ -132,80 +132,96 @@ struct DetailView: View {
     func modalModifiers<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         content()
             .fullScreenCover(item: $store.route.sending(\.setNavigation).reading) { _ in
-                ReadingView(
-                    store: store.scope(state: \.readingState, action: \.reading),
-                    gid: gid,
-                    setting: $setting,
-                    blurRadius: blurRadius
-                )
-                .accentColor(setting.accentColor)
-                .autoBlur(radius: blurRadius)
+                WithPerceptionTracking {
+                    ReadingView(
+                        store: store.scope(state: \.readingState, action: \.reading),
+                        gid: gid,
+                        setting: $setting,
+                        blurRadius: blurRadius
+                    )
+                    .accentColor(setting.accentColor)
+                    .autoBlur(radius: blurRadius)
+                }
             }
             .sheet(item: $store.route.sending(\.setNavigation).archives, id: \.0.absoluteString) { urls in
-                let (galleryURL, archiveURL) = urls
-                ArchivesView(
-                    store: store.scope(state: \.archivesState, action: \.archives),
-                    gid: gid,
-                    user: user,
-                    galleryURL: galleryURL,
-                    archiveURL: archiveURL
-                )
-                .accentColor(setting.accentColor)
-                .autoBlur(radius: blurRadius)
+                WithPerceptionTracking {
+                    let (galleryURL, archiveURL) = urls
+                    ArchivesView(
+                        store: store.scope(state: \.archivesState, action: \.archives),
+                        gid: gid,
+                        user: user,
+                        galleryURL: galleryURL,
+                        archiveURL: archiveURL
+                    )
+                    .accentColor(setting.accentColor)
+                    .autoBlur(radius: blurRadius)
+                }
             }
             .sheet(item: $store.route.sending(\.setNavigation).torrents) { _ in
-                TorrentsView(
-                    store: store.scope(state: \.torrentsState, action: \.torrents),
-                    gid: gid,
-                    token: store.gallery.token,
-                    blurRadius: blurRadius
-                )
-                .accentColor(setting.accentColor)
-                .autoBlur(radius: blurRadius)
+                WithPerceptionTracking {
+                    TorrentsView(
+                        store: store.scope(state: \.torrentsState, action: \.torrents),
+                        gid: gid,
+                        token: store.gallery.token,
+                        blurRadius: blurRadius
+                    )
+                    .accentColor(setting.accentColor)
+                    .autoBlur(radius: blurRadius)
+                }
             }
             .sheet(item: $store.route.sending(\.setNavigation).share, id: \.absoluteString) { url in
-                ActivityView(activityItems: [url])
-                    .autoBlur(radius: blurRadius)
+                WithPerceptionTracking {
+                    ActivityView(activityItems: [url])
+                        .autoBlur(radius: blurRadius)
+                }
             }
             .sheet(item: $store.route.sending(\.setNavigation).postComment) { _ in
-                PostCommentView(
-                    title: L10n.Localizable.PostCommentView.Title.postComment,
-                    content: $store.commentContent,
-                    isFocused: $store.postCommentFocused,
-                    postAction: {
-                        if let galleryURL = store.gallery.galleryURL {
-                            store.send(.postComment(galleryURL))
-                        }
-                        store.send(.setNavigation(nil))
-                    },
-                    cancelAction: { store.send(.setNavigation(nil)) },
-                    onAppearAction: { store.send(.onPostCommentAppear) }
-                )
-                .accentColor(setting.accentColor)
-                .autoBlur(radius: blurRadius)
+                WithPerceptionTracking {
+                    PostCommentView(
+                        title: L10n.Localizable.PostCommentView.Title.postComment,
+                        content: $store.commentContent,
+                        isFocused: $store.postCommentFocused,
+                        postAction: {
+                            if let galleryURL = store.gallery.galleryURL {
+                                store.send(.postComment(galleryURL))
+                            }
+                            store.send(.setNavigation(nil))
+                        },
+                        cancelAction: { store.send(.setNavigation(nil)) },
+                        onAppearAction: { store.send(.onPostCommentAppear) }
+                    )
+                    .accentColor(setting.accentColor)
+                    .autoBlur(radius: blurRadius)
+                }
             }
             .sheet(item: $store.route.sending(\.setNavigation).newDawn) { greeting in
-                NewDawnView(greeting: greeting)
-                    .autoBlur(radius: blurRadius)
+                WithPerceptionTracking {
+                    NewDawnView(greeting: greeting)
+                        .autoBlur(radius: blurRadius)
+                }
             }
             .sheet(item: $store.route.sending(\.setNavigation).tagDetail, id: \.title) { detail in
-                TagDetailView(detail: detail)
-                    .autoBlur(radius: blurRadius)
+                WithPerceptionTracking {
+                    TagDetailView(detail: detail)
+                        .autoBlur(radius: blurRadius)
+                }
             }
     }
 
     var body: some View {
-        modalModifiers(content: { content })
-            .animation(.default, value: store.showsUserRating)
-            .animation(.default, value: store.showsFullTitle)
-            .animation(.default, value: store.galleryDetail)
-            .onAppear {
-                DispatchQueue.main.async {
-                    store.send(.onAppear(gid, setting.showsNewDawnGreeting))
+        WithPerceptionTracking {
+            modalModifiers(content: { content })
+                .animation(.default, value: store.showsUserRating)
+                .animation(.default, value: store.showsFullTitle)
+                .animation(.default, value: store.galleryDetail)
+                .onAppear {
+                    DispatchQueue.main.async {
+                        store.send(.onAppear(gid, setting.showsNewDawnGreeting))
+                    }
                 }
-            }
-            .background(navigationLinks)
-            .toolbar(content: toolbar)
+                .background(navigationLinks)
+                .toolbar(content: toolbar)
+        }
     }
 }
 
@@ -213,35 +229,43 @@ struct DetailView: View {
 private extension DetailView {
     @ViewBuilder var navigationLinks: some View {
         NavigationLink(unwrapping: $store.route, case: \.previews) { _ in
-            PreviewsView(
-                store: store.scope(state: \.previewsState, action: \.previews),
-                gid: gid, setting: $setting, blurRadius: blurRadius
-            )
+            WithPerceptionTracking {
+                PreviewsView(
+                    store: store.scope(state: \.previewsState, action: \.previews),
+                    gid: gid, setting: $setting, blurRadius: blurRadius
+                )
+            }
         }
         NavigationLink(unwrapping: $store.route, case: \.comments) { route in
-            if let commentStore = store.scope(state: \.commentsState.wrappedValue, action: \.comments) {
-                CommentsView(
-                    store: commentStore, gid: gid, token: store.gallery.token, apiKey: store.apiKey,
-                    galleryURL: route.wrappedValue, comments: store.galleryComments, user: user,
-                    setting: $setting, blurRadius: blurRadius,
-                    tagTranslator: tagTranslator
-                )
+            WithPerceptionTracking {
+                if let commentStore = store.scope(state: \.commentsState.wrappedValue, action: \.comments) {
+                    CommentsView(
+                        store: commentStore, gid: gid, token: store.gallery.token, apiKey: store.apiKey,
+                        galleryURL: route.wrappedValue, comments: store.galleryComments, user: user,
+                        setting: $setting, blurRadius: blurRadius,
+                        tagTranslator: tagTranslator
+                    )
+                }
             }
         }
         NavigationLink(unwrapping: $store.route, case: \.detailSearch) { route in
-            if let detailSearchStore = store.scope(state: \.detailSearchState.wrappedValue, action: \.detailSearch) {
-                DetailSearchView(
-                    store: detailSearchStore, keyword: route.wrappedValue, user: user, setting: $setting,
-                    blurRadius: blurRadius, tagTranslator: tagTranslator
-                )
+            WithPerceptionTracking {
+                if let detailSearchStore = store.scope(state: \.detailSearchState.wrappedValue, action: \.detailSearch) {
+                    DetailSearchView(
+                        store: detailSearchStore, keyword: route.wrappedValue, user: user, setting: $setting,
+                        blurRadius: blurRadius, tagTranslator: tagTranslator
+                    )
+                }
             }
         }
         NavigationLink(unwrapping: $store.route, case: \.galleryInfos) { route in
-            let (gallery, galleryDetail) = route.wrappedValue
-            GalleryInfosView(
-                store: store.scope(state: \.galleryInfosState, action: \.galleryInfos),
-                gallery: gallery, galleryDetail: galleryDetail
-            )
+            WithPerceptionTracking {
+                let (gallery, galleryDetail) = route.wrappedValue
+                GalleryInfosView(
+                    store: store.scope(state: \.galleryInfosState, action: \.galleryInfos),
+                    gallery: gallery, galleryDetail: galleryDetail
+                )
+            }
         }
     }
 }
